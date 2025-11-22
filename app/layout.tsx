@@ -28,7 +28,7 @@ export default function RootLayout({
       <body
         className={`${montserrat.variable} ${poppins.variable} antialiased`}
       >
-        <div className="md:p-6 p-4 h-dvh flex flex-col items-center justify-center bg-gradient ">
+        <div className="md:p-6 p-4 h-dvh flex flex-col items-center justify-center bg-gradient relative">
         {children}
         </div>
       </body>
