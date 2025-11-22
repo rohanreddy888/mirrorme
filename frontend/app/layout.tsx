@@ -39,7 +39,7 @@ export default function RootLayout({
               {children}
             </div>
           </CDPProvider>
-          <StripedPattern className="stroke-[0.3] [stroke-dasharray:1,4] absolute top-0 left-0 right-0 bottom-0 w-full h-full" />
+          <StripedPattern className="stroke-[0.3] [stroke-dasharray:1,4] absolute top-0 left-0 right-0 bottom-0 w-full h-full z-0" />
         </div>
       </body>
     </html>
