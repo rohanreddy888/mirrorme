@@ -14,7 +14,7 @@ export default function Header() {
             <Link href="/contact">Contact</Link>
           </li>
           <li>
-            <button className="bg-secondary text-white px-4 py-2 rounded-full font-semibold text-base">Sign In</button>
+            <Link href="/signin" className="bg-secondary text-white px-4 py-2 rounded-full font-semibold text-base">Sign In</Link>
           </li>
         </ul>
       </nav>
