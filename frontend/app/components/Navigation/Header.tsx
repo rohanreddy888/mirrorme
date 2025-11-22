@@ -2,7 +2,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEvmAddress, useSignOut } from "@coinbase/cdp-hooks";
+import { useEvmAddress, useSignOut, useCurrentUser } from "@coinbase/cdp-hooks";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,11 +14,30 @@ import { truncate } from "@/lib/utils";
 import { AuthButton } from "@coinbase/cdp-react";
 import { DoorOpen, User } from "lucide-react";
 import CopyButton from "../CopyButton";
+import { agentsApi, GetWalletResponse } from "@/lib/api";
+import { useEffect, useState } from "react";
 
 export default function Header() {
   const router = useRouter();
   const { evmAddress } = useEvmAddress();
   const { signOut } = useSignOut();
+  const { currentUser } = useCurrentUser();
+  const [wallet, setWallet] = useState<GetWalletResponse | null>(null);
+
+  useEffect(() => {
+    if (currentUser) {
+    const fetchWallet = async () => {
+      try {
+        const wallet = await agentsApi.getWallet(currentUser.authenticationMethods.x?.username || '');
+        setWallet(wallet);
+      } catch (error) {
+        console.error(error);
+        setWallet(null);
+      }
+    };
+    fetchWallet();
+    }
+  }, [currentUser]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -44,14 +63,14 @@ export default function Header() {
           <li>
             <Link href="/contact">Contact</Link>
           </li>
-          {evmAddress ? (
+          {wallet ? (
             <li>
               <DropdownMenu>
                <div className="bg-secondary text-white px-4 py-3 rounded-full font-semibold text-base flex items-center gap-2">
                <DropdownMenuTrigger className="focus:outline-none">
-                  {truncate(evmAddress, 4)} 
+                  {truncate(wallet.address, 4)} 
                 </DropdownMenuTrigger>
-                <CopyButton textToCopy={evmAddress} />
+                <CopyButton textToCopy={wallet.address || ''} />
                </div>
                 <DropdownMenuContent>
                   <DropdownMenuItem className="text-sm" asChild>

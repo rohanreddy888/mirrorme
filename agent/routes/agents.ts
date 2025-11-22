@@ -1,5 +1,6 @@
 import { Router, type Request, type Response } from "express";
 import { SDK } from 'agent0-sdk';
+import { CdpClient } from "@coinbase/cdp-sdk";
 
 
 const router: Router = Router();
@@ -51,6 +52,29 @@ router.get("/", async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error in registration route:", error);
     res.status(500).json({ error: "Failed to process registration" });
+  }
+});
+
+router.get("/:id/wallet", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    if (!id) {
+      return res.status(400).json({ error: "ID is required" });
+    }
+
+    const cdp = new CdpClient();
+    const accountCdp = await cdp.evm.getOrCreateAccount({
+      name: id
+    });
+
+    res.json({ 
+      id,
+      address: accountCdp.address 
+    });
+  } catch (error) {
+    console.error("Error getting CDP wallet address:", error);
+    res.status(500).json({ error: "Failed to get wallet address" });
   }
 });
 
