@@ -9,6 +9,9 @@
   --secondary: #7a00ff;
   --muted: #90a4ae;
   --text: #ffffff;
+  --foreground: #ffffff;
+  --border: #1f1f1f;
+  --ring: #5a5dff;
 }
 
 @theme inline {
@@ -17,6 +20,9 @@
   --color-secondary: var(--secondary);
   --color-muted: var(--muted);
   --color-text: var(--primary);
+  --color-foreground: var(--foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
   --font-sans: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-poppins), ui-serif, Georgia, serif;
   --animate-ripple: ripple var(--duration,2s) ease calc(var(--i, 0)*.2s) infinite;

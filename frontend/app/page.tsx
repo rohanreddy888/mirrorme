@@ -1,4 +1,4 @@
-import { StripedPattern } from "@/components/magicui/striped-pattern";
+import { StripedPattern } from "@/magicui/striped-pattern";
 import Header from "./components/Navigation/Header";
 
 export default function Home() {
