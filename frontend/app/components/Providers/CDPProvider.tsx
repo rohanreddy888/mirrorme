@@ -10,7 +10,7 @@ const config: Config = {
   },
   appName: "MirrorME",
   appLogoUrl: "https://www.mirrorme.fun/assets/icon-dark.svg",
-  authMethods: ["oauth:x"],
+  authMethods: ["oauth:x"], // Twitter is the primary login method
   showCoinbaseFooter: true,
 };
 

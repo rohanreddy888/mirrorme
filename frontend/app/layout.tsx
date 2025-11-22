@@ -32,14 +32,14 @@ export default function RootLayout({
       <body
         className={`${montserrat.variable} ${poppins.variable} antialiased`}
       >
-        <div className="md:p-6 p-4 h-dvh flex flex-col items-center justify-center bg-gradient relative">
+        <div className="md:p-6 p-4 minh-dvh flex flex-col items-center justify-center bg-gradient relative">
           <CDPProvider>
             <div className="w-full mx-auto flex flex-col items-center justify-center">
               <Header />
               {children}
             </div>
           </CDPProvider>
-          <StripedPattern className="stroke-[0.3] [stroke-dasharray:1,4] absolute top-0 left-0 right-0 bottom-0 w-full h-full" />
+          <StripedPattern className="stroke-[0.3] [stroke-dasharray:1,4] absolute top-0 left-0 right-0 bottom-0 w-full h-full z-0" />
         </div>
       </body>
     </html>

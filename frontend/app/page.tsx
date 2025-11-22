@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="flex flex-col items-center justify-center">
+    <div className="flex flex-col items-center justify-center h-full min-h-dvh">
     
       <div className="flex flex-col items-center justify-center gap-6 max-w-2xl text-center">
         <h1 className="text-6xl font-bold text-center capitalize">
