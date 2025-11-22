@@ -563,7 +563,7 @@ export default function ProfilePage() {
           </div>
 
           {/* Save Button */}
-          <div className="pt-4">
+          <div className="">
             <button
               className="w-full h-12 text-base font-semibold bg-secondary text-white hover:bg-secondary/90 rounded-md"
               onClick={handleSave}

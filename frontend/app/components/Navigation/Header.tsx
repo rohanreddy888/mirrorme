@@ -38,34 +38,29 @@ export default function Header() {
       </Link>
       <nav>
         <ul className="flex items-center gap-6 text-background font-semibold">
-          <li>
-            <Link href="/about">Features</Link>
-          </li>
-          <li>
-            <Link href="/contact">Contact</Link>
-          </li>
+          {evmAddress && (
+            <>
+              <li>
+                <Link href="/mirrors">Mirrors</Link>
+              </li>
+              <li>
+                <Link href="/profile">Profile</Link>
+              </li>
+            </>
+          )}
           {evmAddress ? (
             <li>
               <DropdownMenu>
-               <div className="bg-secondary text-white px-4 py-3 rounded-full font-semibold text-base flex items-center gap-2">
-               <DropdownMenuTrigger className="focus:outline-none">
-                  {truncate(evmAddress, 4)} 
-                </DropdownMenuTrigger>
-                <CopyButton textToCopy={evmAddress} />
-               </div>
+                <div className="bg-secondary text-white px-4 py-3 rounded-full font-semibold text-base flex items-center gap-2">
+                  <DropdownMenuTrigger className="focus:outline-none">
+                    {truncate(evmAddress, 4)}
+                  </DropdownMenuTrigger>
+                  <CopyButton textToCopy={evmAddress} />
+                </div>
                 <DropdownMenuContent>
-                  <DropdownMenuItem className="text-sm" asChild>
-                    <Link
-                      className="hover:bg-secondary hover:text-white flex items-center gap-2 w-full"
-                      href="/profile"
-                    >
-                      <User className="size-6" /> Profile
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={handleSignOut}
-                    className="hover:bg-red-600 hover:text-white text-sm"
+                    className="hover:bg-red-600 hover:text-white text-sm font-semibold"
                   >
                     <DoorOpen className="size-6" /> Sign Out
                   </DropdownMenuItem>
@@ -74,7 +69,7 @@ export default function Header() {
             </li>
           ) : (
             <li>
-              <AuthButton className="bg-secondary text-white p-0 rounded-full font-semibold text-base" />
+              <AuthButton className="bg-secondary text-white p-0 rounded-full font-bold text-base capitalize" />
             </li>
           )}
         </ul>
