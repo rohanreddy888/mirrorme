@@ -222,7 +222,7 @@ export default function ChatPage() {
           href={match[2]}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-primary hover:text-secondary underline break-all"
+          className="text-secondary hover:text-secondary underline break-all"
         >
           {match[1]}
         </a>
@@ -265,7 +265,7 @@ export default function ChatPage() {
           href={match[1]}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-primary hover:text-secondary underline break-all"
+          className="text-secondary hover:text-secondary underline break-all"
         >
           {match[1]}
         </a>
@@ -441,9 +441,9 @@ export default function ChatPage() {
           <div className="flex justify-start items-center">
             <div className="bg-white text-background border border-border rounded-2xl p-4">
               <div className="flex gap-1">
-                <span className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]" />
-                <span className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]" />
-                <span className="w-2 h-2 bg-primary rounded-full animate-bounce" />
+                <span className="w-2 h-2 bg-secondary rounded-full animate-bounce [animation-delay:-0.3s]" />
+                <span className="w-2 h-2 bg-secondary rounded-full animate-bounce [animation-delay:-0.15s]" />
+                <span className="w-2 h-2 bg-secondary rounded-full animate-bounce" />
               </div>
             </div>
           </div>

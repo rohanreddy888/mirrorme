@@ -1,10 +1,10 @@
 
-import Header from "./components/Navigation/Header";
+import Link from "next/link";
 
 export default function Home() {
   return (
     <div className="flex flex-col items-center justify-center">
-      <Header />
+    
       <div className="flex flex-col items-center justify-center gap-6 max-w-2xl text-center">
         <h1 className="text-6xl font-bold text-center capitalize">
           Turn your influence into interaction
@@ -14,7 +14,7 @@ export default function Home() {
           you, powered by X402 micropayments, a dynamic reputation score, and
           seamless discoverability through ERC-8004
         </p>
-        <button className="bg-white text-secondary px-6 py-3 rounded-full font-black text-xl mt-6 hover:bg-secondary hover:text-white transition-all duration-300 flex items-center justify-center">Explore Mirrors</button>
+        <Link href="/mirrors" className="bg-white text-secondary px-6 py-4 rounded-full font-black text-xl mt-6 hover:bg-secondary hover:text-white transition-all duration-300 flex items-center justify-center">Explore Mirrors</Link>
       </div>
     </div>
   );

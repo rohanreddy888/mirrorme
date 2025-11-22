@@ -3,6 +3,7 @@ import { Montserrat, Poppins } from "next/font/google";
 import "./globals.css";
 import { StripedPattern } from "@/magicui/striped-pattern";
 import CDPProvider from "./components/Providers/CDPProvider";
+import Header from "./components/Navigation/Header";
 
 const montserrat = Montserrat({
   variable: "--font-montserrat",
@@ -32,8 +33,11 @@ export default function RootLayout({
         className={`${montserrat.variable} ${poppins.variable} antialiased`}
       >
         <div className="md:p-6 p-4 h-dvh flex flex-col items-center justify-center bg-gradient relative">
-        <CDPProvider>
-          {children}
+          <CDPProvider>
+            <div className="w-full mx-auto flex flex-col items-center justify-center">
+              <Header />
+              {children}
+            </div>
           </CDPProvider>
           <StripedPattern className="stroke-[0.3] [stroke-dasharray:1,4] absolute top-0 left-0 right-0 bottom-0 w-full h-full" />
         </div>

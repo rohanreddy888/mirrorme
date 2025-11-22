@@ -1,5 +1,7 @@
 "use client";
 import { CDPReactProvider, type Config, type Theme } from "@coinbase/cdp-react";
+import { useEvmAddress } from "@coinbase/cdp-hooks";
+import { useEffect } from "react";
 
 const config: Config = {
   projectId: "77b4a002-c324-4861-9666-cf4f531425d0",
@@ -10,7 +12,7 @@ const config: Config = {
   appLogoUrl: "https://www.mirrorme.fun/assets/icon-dark.svg",
   authMethods: ["oauth:x"],
   showCoinbaseFooter: true,
-}
+};
 
 export const theme: Partial<Theme> = {
   "colors-bg-default": "#ffffff",
@@ -33,13 +35,33 @@ export const theme: Partial<Theme> = {
   "borderRadius-select-trigger": "var(--cdp-web-borderRadius-lg)",
   "borderRadius-select-list": "var(--cdp-web-borderRadius-lg)",
   "borderRadius-modal": "var(--cdp-web-borderRadius-xl)",
-  "font-family-sans": "'Inter', 'Inter Fallback'"
+  "font-family-sans": "'Inter', 'Inter Fallback'",
+};
+
+function AuthCookieManager({ children }: { children: React.ReactNode }) {
+  const { evmAddress } = useEvmAddress();
+
+  useEffect(() => {
+    // Set a cookie when user is authenticated to enable server-side middleware checks
+    if (evmAddress) {
+      document.cookie = `cdp-auth-token=authenticated; path=/; max-age=86400; SameSite=Lax`;
+    } else {
+      // Remove cookie when user is not authenticated
+      document.cookie = `cdp-auth-token=; path=/; max-age=0; SameSite=Lax`;
+    }
+  }, [evmAddress]);
+
+  return <>{children}</>;
 }
 
-export default function CDPProvider({ children }: { children: React.ReactNode }) {
+export default function CDPProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <CDPReactProvider config={config} theme={theme}>
-      {children}
+      <AuthCookieManager>{children}</AuthCookieManager>
     </CDPReactProvider>
   );
 }
