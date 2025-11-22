@@ -1,8 +1,21 @@
+import Header from "./components/Navigation/Header";
 
 export default function Home() {
   return (
-    <div>
-      <h1>Hello World</h1>
+    <div className="flex flex-col items-center justify-center relative min-h-dvh">
+      <Header />
+      <div className="flex flex-col items-center justify-center gap-6 max-w-2xl text-center">
+        <h1 className="text-6xl font-bold text-center capitalize">
+          Turn your influence into interaction
+        </h1>
+        <p className="">
+          MirrorMe turns your influence into interaction with an AI version of
+          you, powered by X402 micropayments, a dynamic reputation score, and
+          seamless discoverability through ERC-8004
+        </p>
+        <button className="bg-white text-secondary px-6 py-3 rounded-full font-black text-xl mt-6 hover:bg-secondary hover:text-white transition-all duration-300 flex items-center justify-center">Get Started </button>
+      </div>
+
     </div>
   );
 }
