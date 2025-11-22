@@ -4,6 +4,7 @@ import express, { type Request, type Response } from "express";
 import cors from "cors";
 import agentRoutes from "./routes/agent.js";
 import mcpRoutes from "./routes/mcp.js";
+import agentsRoutes from "./routes/agents.js";
 import { paymentMiddleware } from "x402-express";
 import dotenv from "dotenv";
 dotenv.config();
@@ -46,6 +47,7 @@ app.use(paymentMiddleware(
 
 // Routes
 app.use("/api/agent", agentRoutes);
+app.use("/api/agents", agentsRoutes);
 app.use("/mcp", mcpRoutes);
 
 // Health check
@@ -57,6 +59,7 @@ app.get("/health", (_req: Request, res: Response) => {
 app.listen(PORT, () => {
   console.log(`Backend server running on port ${PORT}`);
   console.log(`Agent endpoint: http://localhost:${PORT}/api/agent`);
+  console.log(`Registration endpoint: http://localhost:${PORT}/api/registration`);
   console.log(`x402 endpoint: http://localhost:${PORT}/api/x402-endpoint`);
   console.log(`MCP endpoint: http://localhost:${PORT}/mcp`);
   console.log(`MCP health check: http://localhost:${PORT}/mcp/health`);
