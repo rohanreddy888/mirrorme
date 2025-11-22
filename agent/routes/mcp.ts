@@ -3,6 +3,8 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { withX402, type X402Config } from "agents/x402";
 import { z } from "zod";
+import { facilitator } from "@coinbase/x402";
+
 
 // X402 configuration for payment-enabled tools
 const FACILITATOR_URL = process.env.FACILITATOR_URL || "https://x402.org/facilitator";
@@ -11,7 +13,7 @@ const X402_CONFIG: X402Config = {
   network: "base-sepolia",
   recipient:
     (process.env.PAYEE_ADDRESS as `0x${string}`) || "0x958543756A4c7AC6fB361f0efBfeCD98E4D297Db" as `0x${string}`,
-  facilitator: { url: FACILITATOR_URL as `${string}://${string}` } // Payment facilitator URL - can be overridden via FACILITATOR_URL env var
+  facilitator: facilitator// Payment facilitator URL - can be overridden via FACILITATOR_URL env var
 };
 
 // Create MCP server with x402 payment support
@@ -20,7 +22,7 @@ const baseServer = new McpServer({ name: "PayMCP", version: "1.0.0" });
 const server = withX402(baseServer, X402_CONFIG);
 
 
-
+console.log("FACILITATOR_URL", facilitator);
 
 
 server.paidTool(

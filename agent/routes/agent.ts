@@ -80,12 +80,12 @@ router.post("/", async (req: Request, res: Response) => {
     const mcpServerUrl = process.env.MCP_SERVER_URL || process.env.NEXT_PUBLIC_MCP_SERVER_URL || "http://localhost:3001/mcp";
 
     // Create account from private key (for server-side signing)
-    const privateKey = process.env.PAYMENT_PRIVATE_KEY;
-    if (!privateKey) {
-      return res.status(500).json({ error: "Payment private key not configured" });
-    }
+    // const privateKey = process.env.PAYMENT_PRIVATE_KEY;
+    // if (!privateKey) {
+    //   return res.status(500).json({ error: "Payment private key not configured" });
+    // }
 
-    const account = privateKeyToAccount(privateKey as `0x${string}`);
+    // const account = privateKeyToAccount(privateKey as `0x${string}`);
 
     const cdp = new CdpClient();
     const accountCdp = await cdp.evm.getOrCreateAccount({
@@ -94,7 +94,6 @@ router.post("/", async (req: Request, res: Response) => {
     console.log("accountCdp", accountCdp.address);
 
 
-    console.log("account", account.address);
 
     const client = new Client(
       {
