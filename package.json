@@ -10,5 +10,10 @@
     "backend:dev": "cd backend && pnpm dev",
     "backend:build": "cd backend && pnpm build",
     "backend:start": "cd backend && pnpm start"
+  },
+  "dependencies": {
+    "@coinbase/cdp-core": "^0.0.67",
+    "@coinbase/cdp-hooks": "^0.0.67",
+    "@coinbase/cdp-react": "^0.0.67"
   }
 }
