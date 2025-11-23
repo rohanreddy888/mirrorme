@@ -1,8 +1,39 @@
+"use client";
 import MirrorIcon from "@/lib/icons/mirror";
 import Link from "next/link";
-import Image from "next/image";
+import dynamic from "next/dynamic";
+import { useEffect, useRef, useState } from "react";
+import mirrorAnimation from "@/public/lottie/mirror.json";
+
+const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
 
 export default function Home() {
+  const lottieRef = useRef<HTMLDivElement>(null);
+  const [shouldPlay, setShouldPlay] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setShouldPlay(true);
+          }
+        });
+      },
+      { threshold: 0.3 }
+    );
+
+    const currentRef = lottieRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, []);
   return (
     <div className="flex flex-col items-start justify-start h-full gap-6 max-w-7xl mx-auto">
       <div className="flex flex-col items-center justify-center gap-6 text-center min-h-[calc(100dvh-8rem)] max-w-2xl mx-auto">
@@ -43,21 +74,30 @@ export default function Home() {
             that can interact with your followers and engage with your content.
           </p>
         </div>
-        <div className="flex items-start justify-end">
-          <div className="aspect-square max-w-96 p-12 bg-white rounded-full flex items-center justify-center overflow-hidden">
-            <Image
-              src="/assets/icon-dark.svg"
-              alt="MirrorMe"
-              width={300}
-              height={300}
-              className="w-full h-full object-contain"
+
+        <div ref={lottieRef} className="flex items-end justify-end">
+          {shouldPlay ? (
+            <Lottie
+              animationData={mirrorAnimation}
+              loop={true}
+              style={{ width: 400, height: 400 }}
             />
-          </div>
+          ) : (
+            <MirrorIcon width={400} height={400} />
+          )}
         </div>
       </div>
       <div className="min-h-[calc(100dvh-8rem)] w-full grid grid-cols-2 items-center gap-6">
-        <div className="flex items-start justify-start">
-          <MirrorIcon width={300} height={300} />
+        <div ref={lottieRef} className="flex items-start justify-start">
+          {shouldPlay ? (
+            <Lottie
+              animationData={mirrorAnimation}
+              loop={true}
+              style={{ width: 300, height: 300 }}
+            />
+          ) : (
+            <MirrorIcon width={300} height={300} />
+          )}
         </div>
         <div className="flex flex-col items-end justify-end gap-6 text-right">
           <h1 className="md:text-6xl text-5xl font-bold text-right capitalize">
