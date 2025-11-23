@@ -20,3 +20,4 @@ export function truncate(
   if (str.length <= chars * 2) return str;
   return `${str.substring(0, chars)}...${str.substring(str.length - chars)}`;
 }
+
