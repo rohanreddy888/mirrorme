@@ -30,17 +30,17 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${montserrat.variable} ${poppins.variable} antialiased`}
+        className={`${montserrat.variable} ${poppins.variable} antialiased bg-gradient`}
       >
-        <div className="md:p-6 p-4 minh-dvh flex flex-col items-center justify-center bg-gradient relative">
-          <CDPProvider>
-            <div className="w-full mx-auto flex flex-col items-center justify-center">
+        <CDPProvider>
+          <div className="md:p-6 p-4 h-dvh flex flex-col items-start justify-start relative z-10">
+            <div className="w-full mx-auto flex flex-col items-center justify-center z-10 h-full md:pt-32 pt-16">
               <Header />
               {children}
+              <StripedPattern className="stroke-[0.3] [stroke-dasharray:1,4] absolute top-0 left-0 right-0 bottom-0 w-full h-full -z-10" />
             </div>
-          </CDPProvider>
-          <StripedPattern className="stroke-[0.3] [stroke-dasharray:1,4] absolute top-0 left-0 right-0 bottom-0 w-full h-full z-0" />
-        </div>
+          </div>
+        </CDPProvider>
       </body>
     </html>
   );

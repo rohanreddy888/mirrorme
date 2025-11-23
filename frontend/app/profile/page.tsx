@@ -217,8 +217,8 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-start w-full min-h-screen pt-32 pb-12 px-4">
-      <div className="bg-white text-secondary backdrop-blur-sm rounded-2xl p-8 max-w-3xl w-full shadow-lg">
+    <div className="flex flex-col items-center justify-start w-full h-full">
+      <div className="bg-white text-secondary backdrop-blur-sm rounded-2xl md:p-8 p-4 max-w-3xl w-full shadow-lg h-full min-h-[400px] overflow-y-auto">
         {/* Header */}
         <div className="flex flex-row items-start justify-between gap-2 w-full mb-8">
           <h1 className="text-4xl font-bold">Profile</h1>
@@ -230,7 +230,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Profile Image Upload */}
-        <div className="flex flex-col items-center gap-4 mb-8">
+        <div className="flex flex-col items-center gap-4 mb-4 md:mb-8">
           <div className="relative">
             <div className="w-32 h-32 rounded-full bg-secondary/10 border-4 border-secondary/20 overflow-hidden flex items-center justify-center">
               {profileImage ? (
@@ -293,7 +293,7 @@ export default function ProfilePage() {
 
           {/* Connections */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col items-start justify-start gap-2">
               <Label>Connections</Label>
               <p className="text-xs text-gray-500">
                 Link additional accounts for enhanced features
@@ -301,7 +301,7 @@ export default function ProfilePage() {
             </div>
             <div className="grid grid-cols-1 gap-3">
               {/* Email Connection */}
-              <div className="flex items-center justify-between p-4 border-2 rounded-lg bg-white">
+              <div className="flex items-center justify-between p-4 border rounded-lg bg-white">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   <Mail className="w-5 h-5 shrink-0 text-gray-600" />
                   <div className="flex-1 min-w-0">
@@ -381,7 +381,7 @@ export default function ProfilePage() {
               )}
 
               {/* Phone Connection */}
-              <div className="flex items-center justify-between p-4 border-2 rounded-lg bg-white">
+              <div className="flex items-center justify-between p-4 border rounded-lg bg-white">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   <Phone className="w-5 h-5 shrink-0 text-gray-600" />
                   <div className="flex-1 min-w-0">
@@ -461,7 +461,7 @@ export default function ProfilePage() {
               )}
 
               {/* Google Connection */}
-              <div className="flex items-center justify-between p-4 border-2 rounded-lg bg-white">
+              <div className="flex items-center justify-between p-4 border rounded-lg bg-white">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   <Mail className="w-5 h-5 shrink-0 text-gray-600" />
                   <div className="flex-1 min-w-0">
@@ -505,7 +505,7 @@ export default function ProfilePage() {
               </div>
 
               {/* Apple Connection */}
-              <div className="flex items-center justify-between p-4 border-2 rounded-lg bg-white">
+              <div className="flex items-center justify-between p-4 border rounded-lg bg-white">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   <svg
                     className="w-5 h-5 shrink-0 text-gray-600"

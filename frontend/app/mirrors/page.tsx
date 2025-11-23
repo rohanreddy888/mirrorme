@@ -4,14 +4,23 @@ import { Agent, agentsApi } from "@/lib/api";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { CheckCircle2, XCircle, CreditCard, Zap, Loader2, Bot } from "lucide-react";
+import {
+  CheckCircle2,
+  XCircle,
+  CreditCard,
+  Zap,
+  Loader2,
+  Bot,
+} from "lucide-react";
+import { getChainById } from "@/lib/chains";
 
 // Component to handle agent image with fallback
 function AgentImage({ image, name }: { image?: string; name?: string }) {
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
-  const isValidImage = image && typeof image === "string" && image.startsWith("http");
+  const isValidImage =
+    image && typeof image === "string" && image.startsWith("http");
 
   if (!isValidImage || imageError) {
     return (
@@ -66,7 +75,7 @@ export default function MirrorsPage() {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <Loader2 className="w-8 h-8 animate-spin text-white" />
         <p className="text-muted">Loading mirrors...</p>
       </div>
     );
@@ -88,53 +97,55 @@ export default function MirrorsPage() {
   }
 
   return (
-    <div className="flex flex-col w-full max-w-7xl gap-6 mx-auto">
+    <div className="flex flex-col justify-start items-start w-full max-w-7xl gap-6 mx-auto h-full md:px-12">
       <div className="flex flex-col gap-2">
-        <h1 className="text-5xl font-bold text-background">Explore Mirrors</h1>
-        <p className="text-muted text-lg">
+        <h1 className="text-4xl md:text-5xl font-bold">Explore Mirrors</h1>
+        <p className="text-white text-base md:text-lg">
           Discover AI agents powered by X402 micropayments
         </p>
       </div>
 
       {mirrors.length === 0 ? (
-        <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4 bg-white/50 rounded-2xl border border-border p-12">
+        <div className="flex flex-col items-center justify-center gap-4 bg-white/50 rounded-2xl border border-border p-12 w-full h-full">
           <p className="text-muted text-lg">No mirrors found</p>
-          <p className="text-muted/70 text-sm">Check back later for available agents</p>
+          <p className="text-muted/70 text-sm">
+            Check back later for available agents
+          </p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {mirrors.map((mirror) => (
             <Link
               key={mirror.agentId || mirror.name}
-              href={`/chat?agent=${encodeURIComponent(mirror.agentId || "")}`}
+              href={`/mirrors/${mirror.agentId}/chat`}
               className="group"
             >
-              <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-border p-4 hover:shadow-lg hover:border-primary/50 transition-all duration-300 h-full flex flex-col">
+              <div className="bg-white backdrop-blur-sm rounded-xl border border-border hover:border-white hover:shadow-lg transition-all duration-300 h-full flex flex-col overflow-hidden">
                 {/* Image and Status Badges */}
-                <div className="relative mb-3">
-                  <div className="aspect-square w-full rounded-lg bg-gradient flex items-center justify-center overflow-hidden relative">
-                    <AgentImage 
-                      key={mirror.agentId || mirror.name} 
-                      image={mirror.image} 
-                      name={mirror.name} 
+                <div className="relative">
+                  <div className="aspect-video w-full bg-primary flex items-center justify-center relative overflow-hidden">
+                    <AgentImage
+                      key={mirror.agentId || mirror.name}
+                      image={mirror.image}
+                      name={mirror.name}
                     />
                   </div>
-                  
+
                   {/* Status Badges */}
                   <div className="absolute top-1.5 right-1.5 flex flex-col gap-1.5">
                     {mirror.active ? (
-                      <div className="bg-green-500 text-white px-1.5 py-0.5 rounded-full text-[10px] font-semibold flex items-center gap-0.5">
-                        <CheckCircle2 className="w-2.5 h-2.5" />
+                      <div className="bg-green-500 text-white px-1.5 py-0.5 rounded-full text-xs font-semibold flex items-center gap-0.5">
+                       
                         Active
                       </div>
                     ) : (
-                      <div className="bg-gray-400 text-white px-1.5 py-0.5 rounded-full text-[10px] font-semibold flex items-center gap-0.5">
-                        <XCircle className="w-2.5 h-2.5" />
+                      <div className="bg-gray-400 text-white px-1.5 py-0.5 rounded-full text-xs font-semibold flex items-center gap-0.5">
+                      
                         Inactive
                       </div>
                     )}
                     {mirror.x402support && (
-                      <div className="bg-yellow-500 text-white px-1.5 py-0.5 rounded-full text-[10px] font-semibold flex items-center gap-0.5">
+                      <div className="bg-yellow-500 text-white px-1.5 py-0.5 rounded-full text-xs font-semibold flex items-center gap-0.5">
                         <CreditCard className="w-2.5 h-2.5" />
                         Paid
                       </div>
@@ -143,43 +154,26 @@ export default function MirrorsPage() {
                 </div>
 
                 {/* Agent Info */}
-                <div className="flex-1 flex flex-col gap-2">
-                  <h3 className="text-sm font-bold text-background group-hover:text-primary transition-colors line-clamp-1">
+                <div className="flex-1 flex flex-col gap-2 p-4">
+                  <h3 className="text-base font-bold text-background group-hover:text-primary transition-colors line-clamp-1">
                     {mirror.name || "Unnamed Agent"}
                   </h3>
-                  
+
                   {mirror.description && (
-                    <p className="text-muted text-xs line-clamp-2 leading-snug">
+                    <p className="text-muted text-sm line-clamp-2 leading-snug">
                       {mirror.description}
                     </p>
                   )}
 
-                  {/* Features */}
-                  <div className="flex flex-wrap gap-1.5 mt-auto pt-2 border-t border-border/50">
-                    {mirror.mcp && (
-                      <div className="flex items-center gap-0.5 text-[10px] text-muted bg-white/50 px-1.5 py-0.5 rounded-full">
-                        <Zap className="w-2.5 h-2.5" />
-                        MCP
-                      </div>
-                    )}
-                    {mirror.a2a && (
-                      <div className="flex items-center gap-0.5 text-[10px] text-muted bg-white/50 px-1.5 py-0.5 rounded-full">
-                        <Zap className="w-2.5 h-2.5" />
-                        A2A
-                      </div>
-                    )}
-                    {mirror.mcpTools && Array.isArray(mirror.mcpTools) && mirror.mcpTools.length > 0 && (
-                      <div className="flex items-center gap-0.5 text-[10px] text-muted bg-white/50 px-1.5 py-0.5 rounded-full">
-                        {mirror.mcpTools.length} Tool{mirror.mcpTools.length !== 1 ? "s" : ""}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Chain ID */}
                   {mirror.chainId && (
-                    <div className="text-[10px] text-muted/70 mt-1">
-                      Chain: {mirror.chainId}
-                    </div>
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={getChainById(mirror.chainId)?.icon || ""}
+                      alt={getChainById(mirror.chainId)?.name || ""}
+                      width={25}
+                      height={25}
+                      className="absolute top-2 left-2 rounded-full"
+                    />
                   )}
                 </div>
               </div>
