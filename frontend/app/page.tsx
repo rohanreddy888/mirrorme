@@ -99,7 +99,7 @@ export default function Home() {
           <p className="md:text-base text-sm md:text-right text-left">
             MirrorMe works by creating a mirror of your social media presence.
             It tracks your activity and interactions, and uses that data to
-            create a mirror of your social media presence.
+            create a mirror of you which can interact and provide paid services example booking a meeting using x402 micropayments. All the mirror agents are discoverable through ERC-8004 with a dynamic reputation score.
           </p>
         </div>
       </div>
