@@ -152,17 +152,17 @@ export default function MirrorsPage() {
             <h3 className="text-sm font-medium">Status</h3>
             {/* Active Status Filter */}
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+              <DropdownMenuTrigger className="w-max" asChild>
                 <button
                  
-                  className="text-sm font-medium flex items-center gap-2 bg-white text-secondary border border-border rounded-md px-2 py-1"
+                  className="text-base font-medium flex items-center gap-2 bg-white text-secondary border border-border rounded-md px-2 py-1 w-fit"
                 >
                   {activeFilter === "all"
                     ? "All"
                     : activeFilter === "active"
                     ? "Active"
                     : "Inactive"}
-                  <ChevronDown className="w-3 h-3" />
+                
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
@@ -188,17 +188,17 @@ export default function MirrorsPage() {
             <h3 className="text-sm font-medium">Chain</h3>
             {/* Chain Filter */}
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+              <DropdownMenuTrigger className="w-max" asChild>
                 <button
                   
-                  className="text-sm font-medium flex items-center gap-2 bg-white text-secondary border border-border rounded-md px-2 py-1"
+                  className="text-base font-medium flex items-center gap-2 bg-white text-secondary border border-border rounded-md px-2 py-1 w-fit"
                 >
                   {chainFilter === "all"
                     ? "All"
-                    : chainFilter === "polygon"
-                    ? "Polygon"
-                    : "Base"}
-                  <ChevronDown className="w-3 h-3" />
+                    : chainFilter === "polygon" 
+                    ? <div className="flex items-center gap-2"><img src="/chains/polygon.png" alt="Polygon" width={16} height={16} className="rounded-full" /> <span>Polygon</span></div>
+                    : <div className="flex items-center gap-2"><img src="/chains/base.png" alt="Base" width={16} height={16} className="rounded-full" /> <span>Base</span></div>}
+                 
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
@@ -208,7 +208,7 @@ export default function MirrorsPage() {
                     setChainFilter(value as ChainFilter)
                   }
                 >
-                  <DropdownMenuRadioItem value="all">All</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="all" className="flex items-center gap-2"><span>All</span></DropdownMenuRadioItem>
                   <DropdownMenuRadioItem
                     value="polygon"
                     className="flex items-center gap-2"
