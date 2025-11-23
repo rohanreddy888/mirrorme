@@ -167,6 +167,75 @@ server.paidTool(
   }
 );
 
+// Paid tool to tell a static joke
+server.paidTool(
+  "tell_joke",
+  "Tell a funny joke to lighten the mood",
+  0.01, // USD
+  {
+    category: z.string().optional().describe("Optional joke category (e.g., 'programming', 'dad', 'knock-knock', 'general')"),
+  },
+  {},
+  async ({ category }) => {
+    // Collection of static jokes
+    const jokes: Record<string, string[]> = {
+      programming: [
+        "Why do programmers prefer dark mode? Because light attracts bugs!",
+        "Why do Java developers wear glasses? Because they can't C#!",
+        "A SQL query walks into a bar, walks up to two tables and asks: 'Can I join you?'",
+        "Why did the programmer quit his job? He didn't get arrays!",
+        "How do you comfort a JavaScript bug? You console it!",
+      ],
+      dad: [
+        "I told my wife she was drawing her eyebrows too high. She looked surprised.",
+        "Why don't scientists trust atoms? Because they make up everything!",
+        "I'm reading a book about anti-gravity. It's impossible to put down!",
+        "Why don't eggs tell jokes? They'd crack each other up!",
+        "What do you call a fake noodle? An impasta!",
+      ],
+      "knock-knock": [
+        "Knock knock. Who's there? Interrupting cow. Interrupting cow wh- MOO!",
+        "Knock knock. Who's there? Boo. Boo who? Don't cry, it's just a joke!",
+        "Knock knock. Who's there? Lettuce. Lettuce who? Lettuce in, it's cold out here!",
+      ],
+      general: [
+        "Why don't skeletons fight each other? They don't have the guts!",
+        "What do you call a bear with no teeth? A gummy bear!",
+        "Why did the scarecrow win an award? He was outstanding in his field!",
+        "What's the best thing about Switzerland? I don't know, but the flag is a big plus!",
+        "Why don't scientists trust atoms? Because they make up everything!",
+      ],
+    };
+
+    // Get all jokes if no category specified
+    const allJokes = Object.values(jokes).flat();
+    
+    // Select a random joke based on category
+    let selectedJoke: string;
+    if (category && jokes[category.toLowerCase()]) {
+      const categoryJokes = jokes[category.toLowerCase()];
+      selectedJoke = categoryJokes[Math.floor(Math.random() * categoryJokes.length)];
+    } else {
+      selectedJoke = allJokes[Math.floor(Math.random() * allJokes.length)];
+    }
+
+    const result = {
+      success: true,
+      joke: selectedJoke,
+      category: category || "random",
+      timestamp: new Date().toISOString(),
+      message: "Here's a joke for you! 😄"
+    };
+
+    return {
+      content: [{
+        type: "text",
+        text: JSON.stringify(result, null, 2)
+      }]
+    };
+  }
+);
+
 
 const router: Router = Router();
 

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   useCurrentUser,
   useLinkGoogle,
@@ -18,6 +18,7 @@ import Image from "next/image";
 import Link from "next/link";
 import XIcon from "@/lib/icons/x-icon";
 import { OTPDialog } from "@/components/otp-dialog";
+import { profileApi } from "@/lib/api/profile";
 
 export default function ProfilePage() {
   const { currentUser } = useCurrentUser();
@@ -48,8 +49,6 @@ export default function ProfilePage() {
   const [profileImage, setProfileImage] = useState<string>("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [email, setEmail] = useState(googleEmail || linkedEmail || "");
-  const [phone, setPhone] = useState(linkedPhone || "");
 
   // Linking state
   const [emailFlowId, setEmailFlowId] = useState("");
@@ -68,6 +67,31 @@ export default function ProfilePage() {
     google?: string;
     apple?: string;
   }>({});
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  // Load existing profile on mount
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (!xUsername) return; // Wait for X username to be available
+      
+      try {
+        const profile = await profileApi.getProfile(xUsername);
+        if (profile) {
+          setName(profile.name || "");
+          setDescription(profile.description || "");
+          // Note: profileImage would need to be stored separately or in a different field
+        }
+      } catch (error) {
+        // Profile doesn't exist yet, which is fine
+        if (error instanceof Error && error.message !== "Profile not found") {
+          console.error("Error loading profile:", error);
+        }
+      }
+    };
+
+    loadProfile();
+  }, [xUsername]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -197,23 +221,47 @@ export default function ProfilePage() {
     );
   };
 
-  const handleSave = () => {
-    const profileData = {
-      profileImage,
-      name,
-      description,
-      email,
-      phone,
-      connectedSocials: {
-        x: !!xAuth,
-        google: !!googleAuth,
-        apple: !!appleAuth,
-        email: !!emailAuth,
-        sms: !!smsAuth,
-      },
-    };
-    console.log("Saving profile:", profileData);
-    // Add your save logic here (API call, etc.)
+  const handleSave = async () => {
+    if (!currentUser) {
+      setSaveMessage({ type: "error", text: "You must be signed in to save your profile" });
+      return;
+    }
+
+    // Get user ID from CDP user (use X username as primary identifier)
+    const userId = xUsername || "";
+    
+    if (!userId) {
+      setSaveMessage({ type: "error", text: "Unable to identify user. Please ensure you're logged in with X/Twitter." });
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveMessage(null);
+
+    try {
+      await profileApi.createOrUpdateProfile({
+        user_id: userId,
+        name: name || undefined,
+        description: description || undefined,
+        x_username: xUsername || undefined,
+        agent_id: null, // Will be set when mirror option is enabled
+      });
+
+      setSaveMessage({ type: "success", text: "Profile saved successfully!" });
+      
+      // Clear message after 3 seconds
+      setTimeout(() => {
+        setSaveMessage(null);
+      }, 3000);
+    } catch (error) {
+      console.error("Error saving profile:", error);
+      setSaveMessage({ 
+        type: "error", 
+        text: error instanceof Error ? error.message : "Failed to save profile. Please try again." 
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -563,12 +611,31 @@ export default function ProfilePage() {
           </div>
 
           {/* Save Button */}
-          <div className="">
+          <div className="space-y-2">
+            {saveMessage && (
+              <div
+                className={`p-3 rounded-md text-sm ${
+                  saveMessage.type === "success"
+                    ? "bg-green-50 text-green-800 border border-green-200"
+                    : "bg-red-50 text-red-800 border border-red-200"
+                }`}
+              >
+                {saveMessage.text}
+              </div>
+            )}
             <button
-              className="w-full h-12 text-base font-semibold bg-secondary text-white hover:bg-secondary/90 rounded-md"
+              className="w-full h-12 text-base font-semibold bg-secondary text-white hover:bg-secondary/90 rounded-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               onClick={handleSave}
+              disabled={isSaving}
             >
-              Save Profile
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Profile"
+              )}
             </button>
           </div>
         </div>
