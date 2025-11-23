@@ -1,6 +1,6 @@
 "use client";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { SendHorizonal, Bot, Info } from "lucide-react";
+import { SendHorizonal, Bot, Info, Calendar, CheckCircle2, XCircle, Clock, User, Mail, MapPin, ExternalLink, Wrench, Zap, Settings, FileText, Search, Link as LinkIcon, Key, Database, Code, Image as ImageIcon, Video, Music, Globe, ShoppingCart, CreditCard } from "lucide-react";
 import CopyButton from "@/app/components/CopyButton";
 import { Agent, agentsApi } from "@/lib/api";
 import Image from "next/image";
@@ -11,6 +11,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
+import { useCurrentUser } from "@coinbase/cdp-hooks";
 
 interface PaymentRequired {
   network: string;
@@ -46,6 +47,231 @@ const AGENT_WALLET_ADDRESS =
   "0x0000000000000000000000000000000000000000";
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
+
+// Map tool names to relevant icons
+function getToolIcon(toolName: string) {
+  const name = toolName.toLowerCase();
+  
+  if (name.includes("meeting") || name.includes("calendar") || name.includes("book")) {
+    return Calendar;
+  }
+  if (name.includes("search") || name.includes("find") || name.includes("query")) {
+    return Search;
+  }
+  if (name.includes("url") || name.includes("link") || name.includes("shorten")) {
+    return LinkIcon;
+  }
+  if (name.includes("password") || name.includes("generate") || name.includes("key")) {
+    return Key;
+  }
+  if (name.includes("database") || name.includes("store") || name.includes("save")) {
+    return Database;
+  }
+  if (name.includes("code") || name.includes("script") || name.includes("execute")) {
+    return Code;
+  }
+  if (name.includes("image") || name.includes("picture") || name.includes("photo")) {
+    return ImageIcon;
+  }
+  if (name.includes("video") || name.includes("movie")) {
+    return Video;
+  }
+  if (name.includes("music") || name.includes("audio") || name.includes("sound")) {
+    return Music;
+  }
+  if (name.includes("web") || name.includes("http") || name.includes("browser")) {
+    return Globe;
+  }
+  if (name.includes("payment") || name.includes("pay") || name.includes("transaction")) {
+    return CreditCard;
+  }
+  if (name.includes("shop") || name.includes("cart") || name.includes("buy")) {
+    return ShoppingCart;
+  }
+  if (name.includes("file") || name.includes("document") || name.includes("text")) {
+    return FileText;
+  }
+  if (name.includes("setting") || name.includes("config") || name.includes("preference")) {
+    return Settings;
+  }
+  if (name.includes("tool") || name.includes("utility") || name.includes("action")) {
+    return Wrench;
+  }
+  
+  // Default icon for unknown tools
+  return Zap;
+}
+
+// Component to display tool output in a visualized way
+function ToolOutputDisplay({ output, toolName }: { output: unknown; toolName: string }) {
+  // Try to parse the output
+  let parsedOutput: Record<string, unknown> | string;
+  
+  if (typeof output === "string") {
+    try {
+      parsedOutput = JSON.parse(output);
+    } catch {
+      // If it's not JSON, just display as string
+      return (
+        <div className="mt-2 p-3 bg-white/50 border border-border rounded-xl">
+          <pre className="text-xs whitespace-pre-wrap text-background/80">{output}</pre>
+        </div>
+      );
+    }
+  } else {
+    parsedOutput = output as Record<string, unknown>;
+  }
+
+  // Check if it's a Calendly booking response
+  if (
+    typeof parsedOutput === "object" &&
+    parsedOutput !== null &&
+    "success" in parsedOutput &&
+    "meeting" in parsedOutput &&
+    toolName === "book_meeting"
+  ) {
+    const success = parsedOutput.success;
+    const bookingId = typeof parsedOutput.bookingId === "string" ? parsedOutput.bookingId : String(parsedOutput.bookingId || "");
+    const meeting = parsedOutput.meeting as Record<string, unknown>;
+    const message = typeof parsedOutput.message === "string" ? parsedOutput.message : String(parsedOutput.message || "");
+    const error = parsedOutput.error;
+    
+    if (error || !success) {
+      // Error case
+      const errorMessage = typeof error === "string" ? error : typeof message === "string" ? message : "Unknown error occurred";
+      return (
+        <div className="mt-2 p-4 bg-red-50 border border-red-200 rounded-xl">
+          <div className="flex items-center gap-2 mb-2">
+            <XCircle className="w-4 h-4 text-red-600" />
+            <span className="font-semibold text-red-800 text-sm">Booking Failed</span>
+          </div>
+          <p className="text-red-700 text-xs mb-2">{errorMessage}</p>
+          {parsedOutput.details !== undefined && parsedOutput.details !== null && (
+            <details className="text-xs">
+              <summary className="text-red-600 cursor-pointer">Details</summary>
+              <pre className="mt-2 text-red-600/80 whitespace-pre-wrap">
+                {JSON.stringify(parsedOutput.details, null, 2)}
+              </pre>
+            </details>
+          )}
+        </div>
+      );
+    }
+
+    // Success case - Calendly booking
+    const formatDateTime = (dateStr: string, timeStr: string) => {
+      try {
+        const date = new Date(`${dateStr}T${timeStr}`);
+        return date.toLocaleString("en-US", {
+          weekday: "short",
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      } catch {
+        return `${dateStr} at ${timeStr}`;
+      }
+    };
+
+    return (
+      <div className="mt-2 p-4 bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl shadow-sm">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="p-1.5 bg-green-100 rounded-lg">
+            <CheckCircle2 className="w-4 h-4 text-green-600" />
+          </div>
+          <div>
+            <h4 className="font-semibold text-green-900 text-sm">Meeting Booked Successfully!</h4>
+            <p className="text-green-700 text-xs">{typeof message === "string" ? message : String(message || "")}</p>
+          </div>
+        </div>
+
+        <div className="space-y-2.5">
+          {/* Meeting Details */}
+          <div className="bg-white/60 rounded-lg p-3 space-y-2">
+            {typeof meeting.date === "string" && typeof meeting.time === "string" && (
+              <div className="flex items-center gap-2 text-xs">
+                <Calendar className="w-3.5 h-3.5 text-green-600" />
+                <span className="text-green-800 font-medium">
+                  {formatDateTime(meeting.date, meeting.time)}
+                </span>
+              </div>
+            )}
+            
+            {typeof meeting.timezone === "string" && meeting.timezone && (
+              <div className="flex items-center gap-2 text-xs text-green-700/80">
+                <Clock className="w-3.5 h-3.5" />
+                <span>{meeting.timezone}</span>
+              </div>
+            )}
+
+            {typeof meeting.attendeeName === "string" && (
+              <div className="flex items-center gap-2 text-xs">
+                <User className="w-3.5 h-3.5 text-green-600" />
+                <span className="text-green-800">{meeting.attendeeName}</span>
+              </div>
+            )}
+
+            {typeof meeting.attendeeEmail === "string" && (
+              <div className="flex items-center gap-2 text-xs">
+                <Mail className="w-3.5 h-3.5 text-green-600" />
+                <span className="text-green-800">{meeting.attendeeEmail}</span>
+              </div>
+            )}
+
+            {typeof meeting.calendlyEventUrl === "string" && meeting.calendlyEventUrl !== "N/A" && (
+              <div className="flex items-center gap-2 text-xs pt-1 border-t border-green-200/50">
+                <MapPin className="w-3.5 h-3.5 text-green-600" />
+                <a
+                  href={meeting.calendlyEventUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-green-700 hover:text-green-900 underline flex items-center gap-1"
+                >
+                  View Meeting Details
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+            )}
+          </div>
+
+          {/* Booking ID */}
+          {bookingId && (
+            <div className="flex items-center justify-between bg-white/40 rounded-lg px-3 py-2">
+              <span className="text-xs text-green-700/70">Booking ID:</span>
+              <span className="text-xs font-mono text-green-800 font-medium">{bookingId}</span>
+            </div>
+          )}
+
+          {/* Status Badge */}
+          {typeof meeting.status === "string" && meeting.status && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-green-700/70">Status:</span>
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                meeting.status === "confirmed" || meeting.status === "active"
+                  ? "bg-green-100 text-green-700"
+                  : "bg-yellow-100 text-yellow-700"
+              }`}>
+                {meeting.status}
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Generic JSON output for other tools
+  return (
+    <div className="mt-2 p-3 bg-white/50 border border-border rounded-xl">
+      <span className="text-muted/70 text-xs mb-1 block">Output:</span>
+      <pre className="text-xs whitespace-pre-wrap text-background/80">
+        {JSON.stringify(parsedOutput, null, 2)}
+      </pre>
+    </div>
+  );
+}
 
 // Mock agent data
 const MOCK_AGENT_DATA: Agent = {
@@ -106,6 +332,7 @@ export default function Chat({ mirrorID }: { mirrorID: string }) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [agentData, setAgentData] = useState<Agent | null>(null);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
+  const { currentUser } = useCurrentUser();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -173,6 +400,7 @@ export default function Chat({ mirrorID }: { mirrorID: string }) {
                   content: msg.content,
                 })),
             accountAddress: AGENT_WALLET_ADDRESS,
+            accountId: currentUser?.authenticationMethods.x?.username || "",
             network: "base-sepolia",
             confirmPayment,
             paymentRequirements: confirmPayment ? pendingPayment : undefined,
@@ -477,15 +705,17 @@ export default function Chat({ mirrorID }: { mirrorID: string }) {
                 </div>
                 {message.toolCalls && message.toolCalls.length > 0 && (
                   <div className="mt-3 pt-3 border-t border-border/50 space-y-2">
-                    <p className="text-xs font-semibold text-muted mb-2">
-                      Tool Calls:
-                    </p>
+                  
                     {message.toolCalls.map((toolCall, idx) => (
                       <div
                         key={toolCall.toolCallId || idx}
                         className="bg-white/50 border border-border rounded-xl p-3 text-xs"
                       >
                         <div className="flex items-center gap-2 mb-1">
+                          {(() => {
+                            const IconComponent = getToolIcon(toolCall.toolName);
+                            return <IconComponent className="w-4 h-4 text-background/70" />;
+                          })()}
                           <span className="font-medium text-background">
                             {toolCall.toolName}
                           </span>
@@ -500,15 +730,7 @@ export default function Chat({ mirrorID }: { mirrorID: string }) {
                             </span>
                           )}
                         </div>
-                        {toolCall.input !== null &&
-                          toolCall.input !== undefined && (
-                            <div className="text-muted mb-1">
-                              <span className="text-muted/70">Input: </span>
-                              <pre className="text-xs mt-1 whitespace-pre-wrap">
-                                {JSON.stringify(toolCall.input, null, 2)}
-                              </pre>
-                            </div>
-                          )}
+
                         {toolCall.paymentRequired && (
                           <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-xl">
                             <div className="flex items-center gap-2 mb-2">
@@ -569,15 +791,7 @@ export default function Chat({ mirrorID }: { mirrorID: string }) {
                         {toolCall.output !== null &&
                           toolCall.output !== undefined &&
                           !toolCall.paymentRequired && (
-                            <div className="text-background/80">
-                              <span className="text-muted/70">Output: </span>
-                              <pre className="text-xs mt-1 whitespace-pre-wrap">
-                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                {typeof (toolCall.output as any) === "string"
-                                  ? (toolCall.output as string)
-                                  : JSON.stringify(toolCall.output, null, 2)}
-                              </pre>
-                            </div>
+                            <ToolOutputDisplay output={toolCall.output} toolName={toolCall.toolName} />
                           )}
                       </div>
                     ))}

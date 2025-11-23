@@ -26,20 +26,23 @@ const server = withX402(baseServer, X402_CONFIG);
 console.log("FACILITATOR_URL", facilitator);
 
 
+// Get today's date for the tool description
+const todayDate = new Date().toISOString().split('T')[0];
+
+console.log("todayDate", todayDate);
+
 server.paidTool(
   "book_meeting",
-  "Book a meeting with me",
+  `Book a meeting with me. IMPORTANT: You MUST use the current date (${todayDate}) or a future date. Never use dates from the past or example dates. Always check what today's date is before booking.`,
   0.01, // USD
   {
-    date: z.string().describe("Meeting date in YYYY-MM-DD format"),
-    time: z.string().describe("Meeting time in HH:MM format (24-hour)"),
-    duration: z.number().min(15).max(120).default(30).describe("Meeting duration in minutes"),
+    date: z.string().describe(`Meeting date in YYYY-MM-DD format. CRITICAL: Must be today (${todayDate}) or a future date. Never use past dates or example dates like 2023-10-19 or 2024-12-25. Always use the actual current date or a future date.`),
+    time: z.string().describe("Meeting time in HH:MM format (24-hour). Example: 14:30"),
     attendeeName: z.string().describe("Name of the attendee"),
     attendeeEmail: z.string().email().describe("Email address of the attendee"),
-    topic: z.string().optional().describe("Meeting topic or agenda")
   },
   {},
-  async ({ date, time, duration, attendeeName, attendeeEmail, topic }) => {
+  async ({ date, time, attendeeName, attendeeEmail }) => {
     try {
       const calendlyApiToken = process.env.CALENDLY_API_TOKEN;
       const calendlyEventTypeUri = process.env.CALENDLY_EVENT_TYPE_URI;
@@ -52,64 +55,37 @@ server.paidTool(
         throw new Error("CALENDLY_EVENT_TYPE_URI environment variable is not set");
       }
 
+      // Validate date format and ensure it's not in the past
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(date)) {
+        throw new Error(`Invalid date format: ${date}. Expected YYYY-MM-DD format.`);
+      }
+
       // Combine date and time into ISO format
       const meetingDateTime = new Date(`${date}T${time}`);
+      
+      // Validate that the date is valid
+      if (isNaN(meetingDateTime.getTime())) {
+        throw new Error(`Invalid date or time: ${date} ${time}. Please provide a valid date and time.`);
+      }
+
+      // Check if the date is in the past (allowing for timezone differences)
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const meetingDate = new Date(meetingDateTime.getFullYear(), meetingDateTime.getMonth(), meetingDateTime.getDate());
+      
+      if (meetingDate < today) {
+        const todayStr = today.toISOString().split('T')[0];
+        throw new Error(`Cannot book a meeting in the past. Provided date: ${date}. Today is ${todayStr}. Please use today's date (${todayStr}) or a future date. If the user didn't specify a date, use today's date by default.`);
+      }
+
+      // Log the date being used for debugging
+      console.log(`[Calendly Booking] Date received: ${date}, Time: ${time}, Parsed: ${meetingDateTime.toISOString()}`);
       
       // Calendly API expects the start time in ISO 8601 format
       const startTime = meetingDateTime.toISOString();
       
-      // Calculate end time based on duration
-      const endTime = new Date(meetingDateTime.getTime() + duration * 60 * 1000).toISOString();
 
-      // First, fetch the event type to get question structure if we need to include questions_and_answers
-      let questionsAndAnswers: any[] = [];
-      if (topic) {
-        try {
-          const eventTypeResponse = await axios.get(
-            calendlyEventTypeUri,
-            {
-              headers: {
-                "Authorization": `Bearer ${calendlyApiToken}`,
-                "Content-Type": "application/json"
-              }
-            }
-          );
-
-          const eventType = eventTypeResponse.data?.resource;
-          // Find the first question field that accepts text input
-          // Calendly questions have a 'position' field (0-indexed)
-          if (eventType?.questions) {
-            // Find a text question to use for the topic
-            const textQuestion = eventType.questions.find((q: any) => 
-              q.type === "text" || q.type === "textarea" || !q.type
-            );
-            if (textQuestion) {
-              questionsAndAnswers = [{
-                position: textQuestion.position ?? 0,
-                answer: topic
-              }];
-            } else {
-              // Fallback: use position 0 if no questions found
-              questionsAndAnswers = [{
-                position: 0,
-                answer: topic
-              }];
-            }
-          } else {
-            // If no questions structure, use position 0 as default
-            questionsAndAnswers = [{
-              position: 0,
-              answer: topic
-            }];
-          }
-        } catch (error) {
-          // If we can't fetch event type, use position 0 as fallback
-          questionsAndAnswers = [{
-            position: 0,
-            answer: topic
-          }];
-        }
-      }
 
       // Create scheduled event invitation via Calendly API
       const calendlyResponse = await axios.post(
@@ -125,7 +101,6 @@ server.paidTool(
             kind: "google_conference"
           },
           start_time: startTime,
-          questions_and_answers: questionsAndAnswers
         },
         {
           headers: {
@@ -144,13 +119,10 @@ server.paidTool(
         meeting: {
           date,
           time,
-          duration,
           attendeeName,
           attendeeEmail,
-          topic: topic || "General discussion",
           status: calendlyEvent.status || "confirmed",
           meetingDateTime: startTime,
-          endTime: endTime,
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           calendlyEventUrl: calendlyEvent.event_guests?.[0]?.event_guest_url || calendlyEvent.location?.location || "N/A"
         },
