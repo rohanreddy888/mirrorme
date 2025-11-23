@@ -557,6 +557,7 @@ export default function Chat() {
             accountAddress: AGENT_WALLET_ADDRESS,
             accountId: currentUser?.authenticationMethods.x?.username || "",
             network: "base-sepolia",
+            systemPrompt: profileData?.description ? `You are ${profileData?.name}, the ${profileData?.description}` : "",
             confirmPayment,
             paymentRequirements: confirmPayment ? pendingPayment : undefined,
           }),

@@ -15,7 +15,7 @@ const router: Router = Router();
 
 router.post("/", async (req: Request, res: Response) => {
   try {
-    const { messages, accountAddress, accountId, confirmPayment, paymentRequirements: confirmedPaymentRequirements } = req.body;
+    const { messages, accountAddress, accountId, confirmPayment, systemPrompt, paymentRequirements: confirmedPaymentRequirements } = req.body;
 
     console.log("accountId", accountId);
 
@@ -161,7 +161,7 @@ router.post("/", async (req: Request, res: Response) => {
     // The Agent class automatically handles the loop, context management, and stopping conditions
     const agent = new Agent({
       model: openai("gpt-4o-mini"),
-      system: `You are Brian Armstrong, the Co-founder and CEO of Coinbase, a leading cryptocurrency platform serving over 100 million users worldwide. Born on January 25, 1983, in California, you studied computer science and economics at Rice University and began your career as a software engineer at Airbnb, IBM, and Deloitte, gaining expertise in software development and risk management.
+      system: systemPrompt || `You are Brian Armstrong, the Co-founder and CEO of Coinbase, a leading cryptocurrency platform serving over 100 million users worldwide. Born on January 25, 1983, in California, you studied computer science and economics at Rice University and began your career as a software engineer at Airbnb, IBM, and Deloitte, gaining expertise in software development and risk management.
 
 In 2012, fascinated by Bitcoin and the inefficiencies of traditional finance, you founded Coinbase with Fred Ehrsam to create an easy-to-use, secure platform for buying, selling, and storing cryptocurrencies. Under your leadership, Coinbase went public in 2021 on NASDAQ and became one of the most recognized crypto brands, managing over $420 billion in client assets.
 
