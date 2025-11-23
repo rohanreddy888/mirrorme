@@ -4,6 +4,8 @@ import "./globals.css";
 import { StripedPattern } from "@/magicui/striped-pattern";
 import CDPProvider from "./components/Providers/CDPProvider";
 import Header from "./components/Navigation/Header";
+import { Toaster } from "sonner";
+import Footer from "./components/Navigation/Footer";
 
 const montserrat = Montserrat({
   variable: "--font-montserrat",
@@ -33,14 +35,16 @@ export default function RootLayout({
         className={`${montserrat.variable} ${poppins.variable} antialiased bg-gradient`}
       >
         <CDPProvider>
-          <div className="md:p-6 p-4 h-dvh flex flex-col items-start justify-start relative z-0">
-            <div className="w-full mx-auto flex flex-col items-center justify-center z-10 h-full md:pt-32 pt-16">
+          <div className="h-dvh flex flex-col items-start justify-between relative z-0">
+            <div className="w-full mx-auto flex flex-col items-center justify-center z-10 flex-1 md:pt-36 pt-16 md:p-6 p-4">
               <Header />
               {children}
               <StripedPattern className="stroke-[0.3] [stroke-dasharray:1,4] absolute top-0 left-0 right-0 bottom-0 w-full h-full -z-10" />
             </div>
+            <Footer />
           </div>
         </CDPProvider>
+        <Toaster />
       </body>
     </html>
   );

@@ -5,10 +5,8 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
-  CheckCircle2,
   XCircle,
   CreditCard,
-  Zap,
   Loader2,
   Bot,
 } from "lucide-react";
@@ -97,7 +95,7 @@ export default function MirrorsPage() {
   }
 
   return (
-    <div className="flex flex-col justify-start items-start w-full max-w-7xl gap-6 mx-auto h-full md:px-12">
+    <div className="flex flex-col justify-start items-start w-full max-w-7xl gap-6 mx-auto h-full md:px-12 min-h-screen">
       <div className="flex flex-col gap-2">
         <h1 className="text-4xl md:text-5xl font-bold">Explore Mirrors</h1>
         <p className="text-white text-base md:text-lg">

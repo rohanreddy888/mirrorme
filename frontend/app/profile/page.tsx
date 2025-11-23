@@ -19,10 +19,14 @@ import Link from "next/link";
 import XIcon from "@/lib/icons/x-icon";
 import { OTPDialog } from "@/components/otp-dialog";
 import { profileApi } from "@/lib/api/profile";
+import { Toggle } from "@/components/ui/toggle";
+import MirrorIcon from "@/lib/icons/mirror";
+import { toast } from "sonner";
 
 export default function ProfilePage() {
   const { currentUser } = useCurrentUser();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isMirroring, setIsMirroring] = useState(false);
 
   // CDP Linking Hooks
   const { linkGoogle, oauthState: googleOAuthState } = useLinkGoogle();
@@ -68,49 +72,61 @@ export default function ProfilePage() {
     apple?: string;
   }>({});
   const [isSaving, setIsSaving] = useState(false);
-  const [saveMessage, setSaveMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [saveMessage, setSaveMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
   const [isLoadingTwitter, setIsLoadingTwitter] = useState(false);
 
   // Function to fetch Twitter profile data
-  const fetchTwitterData = useCallback(async (username: string, skipIfImageExists = false) => {
-    // Skip Twitter API call if we already have a profile image and skipIfImageExists is true
-    if (skipIfImageExists && profileImage) {
-      return false;
-    }
-
-    setIsLoadingTwitter(true);
-    try {
-      const twitterData = await profileApi.getTwitterProfile(username);
-      if (twitterData) {
-        // Populate with Twitter data if available
-        if (twitterData.name) setName(twitterData.name);
-        if (twitterData.description) setDescription(twitterData.description);
-        // Only update image if we don't already have one
-        if (twitterData.image && !profileImage) {
-          setProfileImage(twitterData.image);
-        }
-        setSaveMessage({ type: "success", text: "Twitter profile data loaded successfully!" });
-        setTimeout(() => setSaveMessage(null), 3000);
-        return true;
+  const fetchTwitterData = useCallback(
+    async (username: string, skipIfImageExists = false) => {
+      // Skip Twitter API call if we already have a profile image and skipIfImageExists is true
+      if (skipIfImageExists && profileImage) {
+        return false;
       }
-    } catch (twitterError) {
-      console.warn("Failed to fetch Twitter profile:", twitterError);
-      setSaveMessage({ 
-        type: "error", 
-        text: twitterError instanceof Error ? twitterError.message : "Failed to fetch Twitter profile data" 
-      });
+
+      setIsLoadingTwitter(true);
+      try {
+        const twitterData = await profileApi.getTwitterProfile(username);
+        if (twitterData) {
+          // Populate with Twitter data if available
+          if (twitterData.name) setName(twitterData.name);
+          if (twitterData.description) setDescription(twitterData.description);
+          // Only update image if we don't already have one
+          if (twitterData.image && !profileImage) {
+            setProfileImage(twitterData.image);
+          }
+          setSaveMessage({
+            type: "success",
+            text: "Twitter profile data loaded successfully!",
+          });
+          setTimeout(() => setSaveMessage(null), 3000);
+          return true;
+        }
+      } catch (twitterError) {
+        console.warn("Failed to fetch Twitter profile:", twitterError);
+        setSaveMessage({
+          type: "error",
+          text:
+            twitterError instanceof Error
+              ? twitterError.message
+              : "Failed to fetch Twitter profile data",
+        });
+        return false;
+      } finally {
+        setIsLoadingTwitter(false);
+      }
       return false;
-    } finally {
-      setIsLoadingTwitter(false);
-    }
-    return false;
-  }, [profileImage]);
+    },
+    [profileImage]
+  );
 
   // Load existing profile and Twitter data on mount
   useEffect(() => {
     const loadProfile = async () => {
       if (!xUsername) return; // Wait for X username to be available
-      
+
       try {
         // First, try to load saved profile
         let hasProfileImage = false;
@@ -274,15 +290,21 @@ export default function ProfilePage() {
 
   const handleSave = async () => {
     if (!currentUser) {
-      setSaveMessage({ type: "error", text: "You must be signed in to save your profile" });
+      setSaveMessage({
+        type: "error",
+        text: "You must be signed in to save your profile",
+      });
       return;
     }
 
     // Get user ID from CDP user (use X username as primary identifier)
     const userId = xUsername || "";
-    
+
     if (!userId) {
-      setSaveMessage({ type: "error", text: "Unable to identify user. Please ensure you're logged in with X/Twitter." });
+      setSaveMessage({
+        type: "error",
+        text: "Unable to identify user. Please ensure you're logged in with X/Twitter.",
+      });
       return;
     }
 
@@ -300,16 +322,19 @@ export default function ProfilePage() {
       });
 
       setSaveMessage({ type: "success", text: "Profile saved successfully!" });
-      
+
       // Clear message after 3 seconds
       setTimeout(() => {
         setSaveMessage(null);
       }, 3000);
     } catch (error) {
       console.error("Error saving profile:", error);
-      setSaveMessage({ 
-        type: "error", 
-        text: error instanceof Error ? error.message : "Failed to save profile. Please try again." 
+      setSaveMessage({
+        type: "error",
+        text:
+          error instanceof Error
+            ? error.message
+            : "Failed to save profile. Please try again.",
       });
     } finally {
       setIsSaving(false);
@@ -323,25 +348,52 @@ export default function ProfilePage() {
         <div className="flex flex-row items-start justify-between gap-2 w-full mb-8">
           <h1 className="text-4xl font-bold">Profile</h1>
           <div className="flex items-center gap-2">
+            
+            <Toggle
+              aria-label="Toggle bookmark"
+              size="default"
+              variant="outline"
+              className="data-[state=on]:bg-secondary data-[state=on]:text-white px-4 py-2 rounded-full"
+              defaultPressed={isMirroring}
+              onPressedChange={(checked: boolean) => {
+                setIsMirroring(checked);
+                if (checked) {
+                  toast("Agent has been spawned", {
+                    description: "You will see your agent on the MirrorMe",
+                  });
+                } else {
+                  toast("Agent has been deactivated", {
+                    description: "You will no longer see your agent on the MirrorMe",
+                  });
+                }
+              }}
+            >
+              <MirrorIcon />
+              MirrorMe
+            </Toggle>
             {xUsername && (
               <>
-                <Button
+                {/* <Button
                   size="sm"
                   variant="outline"
                   onClick={() => fetchTwitterData(xUsername, true)}
                   disabled={isLoadingTwitter}
-                  className="text-sm"
+                  className="text-sm rounded-full"
                 >
                   {isLoadingTwitter ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                      Loading...
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      
                     </>
                   ) : (
-                    "Refresh from Twitter"
+                    <Loader2 className="w-4 h-4" />
                   )}
-                </Button>
-                <Link target="_blank" href={`https://x.com/${xUsername}`} className="text-sm bg-secondary text-white px-4 py-2 rounded-full flex items-center gap-2">
+                </Button> */}
+                <Link
+                  target="_blank"
+                  href={`https://x.com/${xUsername}`}
+                  className="text-sm bg-secondary text-white px-4 py-2 rounded-full flex items-center gap-2"
+                >
                   <XIcon className="w-4 h-4" /> {xUsername}
                 </Link>
               </>
@@ -408,9 +460,6 @@ export default function ProfilePage() {
             />
           </div>
 
-
-    
-
           {/* Connections */}
           <div className="space-y-4">
             <div className="flex flex-col items-start justify-start gap-2">
@@ -467,7 +516,9 @@ export default function ProfilePage() {
                     <Button
                       size="sm"
                       onClick={handleLinkEmail}
-                      disabled={!emailToLink || linkingStatus.email === "linking"}
+                      disabled={
+                        !emailToLink || linkingStatus.email === "linking"
+                      }
                     >
                       {linkingStatus.email === "linking" ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -481,7 +532,10 @@ export default function ProfilePage() {
                       onClick={() => {
                         setShowEmailInput(false);
                         setEmailToLink("");
-                        setLinkingStatus((prev) => ({ ...prev, email: undefined }));
+                        setLinkingStatus((prev) => ({
+                          ...prev,
+                          email: undefined,
+                        }));
                       }}
                     >
                       <X className="w-4 h-4" />
@@ -547,7 +601,9 @@ export default function ProfilePage() {
                     <Button
                       size="sm"
                       onClick={handleLinkPhone}
-                      disabled={!phoneToLink || linkingStatus.phone === "linking"}
+                      disabled={
+                        !phoneToLink || linkingStatus.phone === "linking"
+                      }
                     >
                       {linkingStatus.phone === "linking" ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -561,7 +617,10 @@ export default function ProfilePage() {
                       onClick={() => {
                         setShowPhoneInput(false);
                         setPhoneToLink("");
-                        setLinkingStatus((prev) => ({ ...prev, phone: undefined }));
+                        setLinkingStatus((prev) => ({
+                          ...prev,
+                          phone: undefined,
+                        }));
                       }}
                     >
                       <X className="w-4 h-4" />
@@ -677,7 +736,9 @@ export default function ProfilePage() {
             <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <AlertCircle className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
               <p className="text-xs text-blue-800">
-                Linking additional accounts helps verify your identity and enables enhanced features. All accounts remain connected to your Twitter login.
+                Linking additional accounts helps verify your identity and
+                enables enhanced features. All accounts remain connected to your
+                Twitter login.
               </p>
             </div>
           </div>
@@ -723,7 +784,11 @@ export default function ProfilePage() {
         onChange={setEmailOtp}
         onVerify={handleVerifyEmailOtp}
         isVerifying={linkingStatus.email === "verifying"}
-        error={linkingStatus.email === "error" ? "Invalid code. Please try again." : undefined}
+        error={
+          linkingStatus.email === "error"
+            ? "Invalid code. Please try again."
+            : undefined
+        }
         maxLength={6}
       />
 
@@ -737,7 +802,11 @@ export default function ProfilePage() {
         onChange={setPhoneOtp}
         onVerify={handleVerifyPhoneOtp}
         isVerifying={linkingStatus.phone === "verifying"}
-        error={linkingStatus.phone === "error" ? "Invalid code. Please try again." : undefined}
+        error={
+          linkingStatus.phone === "error"
+            ? "Invalid code. Please try again."
+            : undefined
+        }
         maxLength={6}
       />
     </div>

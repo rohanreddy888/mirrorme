@@ -1,7 +1,34 @@
 "use client";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
-import { SendHorizonal, Bot, Info, Calendar, CheckCircle2, XCircle, Clock, User, Mail, MapPin, ExternalLink, Wrench, Zap, Settings, FileText, Search, Link as LinkIcon, Key, Database, Code, Image as ImageIcon, Video, Music, Globe, ShoppingCart, CreditCard } from "lucide-react";
+import {
+  SendHorizonal,
+  Bot,
+  Info,
+  Calendar,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  User,
+  Mail,
+  MapPin,
+  ExternalLink,
+  Wrench,
+  Zap,
+  Settings,
+  FileText,
+  Search,
+  Link as LinkIcon,
+  Key,
+  Database,
+  Code,
+  Image as ImageIcon,
+  Video,
+  Music,
+  Globe,
+  ShoppingCart,
+  CreditCard,
+} from "lucide-react";
 import CopyButton from "@/app/components/CopyButton";
 import { Agent, agentsApi } from "@/lib/api";
 import { profileApi, type Profile } from "@/lib/api/profile";
@@ -45,6 +72,8 @@ interface Message {
   toolCalls?: ToolCall[];
 }
 
+const tags = ["Developer", "DeFi", "x402", "Lending", "Yield Farming", "Memecoins", "Ethereum", "Solidity"];
+
 // Agent's wallet address (placeholder - agent has its own wallet)
 const AGENT_WALLET_ADDRESS =
   process.env.NEXT_PUBLIC_AGENT_WALLET_ADDRESS ||
@@ -55,62 +84,120 @@ const BACKEND_URL =
 // Map tool names to relevant icons
 function getToolIcon(toolName: string) {
   const name = toolName.toLowerCase();
-  
-  if (name.includes("meeting") || name.includes("calendar") || name.includes("book")) {
+
+  if (
+    name.includes("meeting") ||
+    name.includes("calendar") ||
+    name.includes("book")
+  ) {
     return Calendar;
   }
-  if (name.includes("search") || name.includes("find") || name.includes("query")) {
+  if (
+    name.includes("search") ||
+    name.includes("find") ||
+    name.includes("query")
+  ) {
     return Search;
   }
-  if (name.includes("url") || name.includes("link") || name.includes("shorten")) {
+  if (
+    name.includes("url") ||
+    name.includes("link") ||
+    name.includes("shorten")
+  ) {
     return LinkIcon;
   }
-  if (name.includes("password") || name.includes("generate") || name.includes("key")) {
+  if (
+    name.includes("password") ||
+    name.includes("generate") ||
+    name.includes("key")
+  ) {
     return Key;
   }
-  if (name.includes("database") || name.includes("store") || name.includes("save")) {
+  if (
+    name.includes("database") ||
+    name.includes("store") ||
+    name.includes("save")
+  ) {
     return Database;
   }
-  if (name.includes("code") || name.includes("script") || name.includes("execute")) {
+  if (
+    name.includes("code") ||
+    name.includes("script") ||
+    name.includes("execute")
+  ) {
     return Code;
   }
-  if (name.includes("image") || name.includes("picture") || name.includes("photo")) {
+  if (
+    name.includes("image") ||
+    name.includes("picture") ||
+    name.includes("photo")
+  ) {
     return ImageIcon;
   }
   if (name.includes("video") || name.includes("movie")) {
     return Video;
   }
-  if (name.includes("music") || name.includes("audio") || name.includes("sound")) {
+  if (
+    name.includes("music") ||
+    name.includes("audio") ||
+    name.includes("sound")
+  ) {
     return Music;
   }
-  if (name.includes("web") || name.includes("http") || name.includes("browser")) {
+  if (
+    name.includes("web") ||
+    name.includes("http") ||
+    name.includes("browser")
+  ) {
     return Globe;
   }
-  if (name.includes("payment") || name.includes("pay") || name.includes("transaction")) {
+  if (
+    name.includes("payment") ||
+    name.includes("pay") ||
+    name.includes("transaction")
+  ) {
     return CreditCard;
   }
   if (name.includes("shop") || name.includes("cart") || name.includes("buy")) {
     return ShoppingCart;
   }
-  if (name.includes("file") || name.includes("document") || name.includes("text")) {
+  if (
+    name.includes("file") ||
+    name.includes("document") ||
+    name.includes("text")
+  ) {
     return FileText;
   }
-  if (name.includes("setting") || name.includes("config") || name.includes("preference")) {
+  if (
+    name.includes("setting") ||
+    name.includes("config") ||
+    name.includes("preference")
+  ) {
     return Settings;
   }
-  if (name.includes("tool") || name.includes("utility") || name.includes("action")) {
+  if (
+    name.includes("tool") ||
+    name.includes("utility") ||
+    name.includes("action")
+  ) {
     return Wrench;
   }
-  
+
   // Default icon for unknown tools
   return Zap;
 }
 
 // Component to display tool output in a visualized way
-function ToolOutputDisplay({ output, toolName }: { output: unknown; toolName: string }) {
+function ToolOutputDisplay({
+  output,
+  toolName,
+}: {
+  output: unknown;
+  toolName: string;
+}) {
   // Try to parse the output
   let parsedOutput: Record<string, unknown> | string;
-  
+
   if (typeof output === "string") {
     try {
       parsedOutput = JSON.parse(output);
@@ -118,7 +205,9 @@ function ToolOutputDisplay({ output, toolName }: { output: unknown; toolName: st
       // If it's not JSON, just display as string
       return (
         <div className="mt-2 p-3 bg-white/50 border border-border rounded-xl">
-          <pre className="text-xs whitespace-pre-wrap text-background/80">{output}</pre>
+          <pre className="text-xs whitespace-pre-wrap text-background/80">
+            {output}
+          </pre>
         </div>
       );
     }
@@ -135,29 +224,45 @@ function ToolOutputDisplay({ output, toolName }: { output: unknown; toolName: st
     toolName === "book_meeting"
   ) {
     const success = parsedOutput.success;
-    const bookingId = typeof parsedOutput.bookingId === "string" ? parsedOutput.bookingId : String(parsedOutput.bookingId || "");
+    const bookingId =
+      typeof parsedOutput.bookingId === "string"
+        ? parsedOutput.bookingId
+        : String(parsedOutput.bookingId || "");
     const meeting = parsedOutput.meeting as Record<string, unknown>;
-    const message = typeof parsedOutput.message === "string" ? parsedOutput.message : String(parsedOutput.message || "");
+    const message =
+      typeof parsedOutput.message === "string"
+        ? parsedOutput.message
+        : String(parsedOutput.message || "");
     const error = parsedOutput.error;
-    
+
     if (error || !success) {
       // Error case
-      const errorMessage = typeof error === "string" ? error : typeof message === "string" ? message : "Unknown error occurred";
+      const errorMessage =
+        typeof error === "string"
+          ? error
+          : typeof message === "string"
+          ? message
+          : "Unknown error occurred";
       return (
         <div className="mt-2 p-4 bg-red-50 border border-red-200 rounded-xl">
           <div className="flex items-center gap-2 mb-2">
             <XCircle className="w-4 h-4 text-red-600" />
-            <span className="font-semibold text-red-800 text-sm">Booking Failed</span>
+            <span className="font-semibold text-red-800 text-sm">
+              Booking Failed
+            </span>
           </div>
           <p className="text-red-700 text-xs mb-2">{errorMessage}</p>
-          {parsedOutput.details !== undefined && parsedOutput.details !== null && (
-            <details className="text-xs">
-              <summary className="text-red-600 cursor-pointer">Details</summary>
-              <pre className="mt-2 text-red-600/80 whitespace-pre-wrap">
-                {JSON.stringify(parsedOutput.details, null, 2)}
-              </pre>
-            </details>
-          )}
+          {parsedOutput.details !== undefined &&
+            parsedOutput.details !== null && (
+              <details className="text-xs">
+                <summary className="text-red-600 cursor-pointer">
+                  Details
+                </summary>
+                <pre className="mt-2 text-red-600/80 whitespace-pre-wrap">
+                  {JSON.stringify(parsedOutput.details, null, 2)}
+                </pre>
+              </details>
+            )}
         </div>
       );
     }
@@ -180,29 +285,34 @@ function ToolOutputDisplay({ output, toolName }: { output: unknown; toolName: st
     };
 
     return (
-      <div className="mt-2 p-4 bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl shadow-sm">
+      <div className="mt-2 p-4 from-green-50 to-emerald-50 border border-green-200 rounded-xl shadow-sm">
         <div className="flex items-center gap-2 mb-3">
           <div className="p-1.5 bg-green-100 rounded-lg">
             <CheckCircle2 className="w-4 h-4 text-green-600" />
           </div>
           <div>
-            <h4 className="font-semibold text-green-900 text-sm">Meeting Booked Successfully!</h4>
-            <p className="text-green-700 text-xs">{typeof message === "string" ? message : String(message || "")}</p>
+            <h4 className="font-semibold text-green-900 text-sm">
+              Meeting Booked Successfully!
+            </h4>
+            <p className="text-green-700 text-xs">
+              {typeof message === "string" ? message : String(message || "")}
+            </p>
           </div>
         </div>
 
         <div className="space-y-2.5">
           {/* Meeting Details */}
           <div className="bg-white/60 rounded-lg p-3 space-y-2">
-            {typeof meeting.date === "string" && typeof meeting.time === "string" && (
-              <div className="flex items-center gap-2 text-xs">
-                <Calendar className="w-3.5 h-3.5 text-green-600" />
-                <span className="text-green-800 font-medium">
-                  {formatDateTime(meeting.date, meeting.time)}
-                </span>
-              </div>
-            )}
-            
+            {typeof meeting.date === "string" &&
+              typeof meeting.time === "string" && (
+                <div className="flex items-center gap-2 text-xs">
+                  <Calendar className="w-3.5 h-3.5 text-green-600" />
+                  <span className="text-green-800 font-medium">
+                    {formatDateTime(meeting.date, meeting.time)}
+                  </span>
+                </div>
+              )}
+
             {typeof meeting.timezone === "string" && meeting.timezone && (
               <div className="flex items-center gap-2 text-xs text-green-700/80">
                 <Clock className="w-3.5 h-3.5" />
@@ -224,27 +334,30 @@ function ToolOutputDisplay({ output, toolName }: { output: unknown; toolName: st
               </div>
             )}
 
-            {typeof meeting.calendlyEventUrl === "string" && meeting.calendlyEventUrl !== "N/A" && (
-              <div className="flex items-center gap-2 text-xs pt-1 border-t border-green-200/50">
-                <MapPin className="w-3.5 h-3.5 text-green-600" />
-                <a
-                  href={meeting.calendlyEventUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-green-700 hover:text-green-900 underline flex items-center gap-1"
-                >
-                  View Meeting Details
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-              </div>
-            )}
+            {typeof meeting.calendlyEventUrl === "string" &&
+              meeting.calendlyEventUrl !== "N/A" && (
+                <div className="flex items-center gap-2 text-xs pt-1 border-t border-green-200/50">
+                  <MapPin className="w-3.5 h-3.5 text-green-600" />
+                  <a
+                    href={meeting.calendlyEventUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-green-700 hover:text-green-900 underline flex items-center gap-1"
+                  >
+                    View Meeting Details
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+              )}
           </div>
 
           {/* Booking ID */}
           {bookingId && (
             <div className="flex items-center justify-between bg-white/40 rounded-lg px-3 py-2">
               <span className="text-xs text-green-700/70">Booking ID:</span>
-              <span className="text-xs font-mono text-green-800 font-medium">{bookingId}</span>
+              <span className="text-xs font-mono text-green-800 font-medium">
+                {bookingId}
+              </span>
             </div>
           )}
 
@@ -252,11 +365,13 @@ function ToolOutputDisplay({ output, toolName }: { output: unknown; toolName: st
           {typeof meeting.status === "string" && meeting.status && (
             <div className="flex items-center gap-2">
               <span className="text-xs text-green-700/70">Status:</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                meeting.status === "confirmed" || meeting.status === "active"
-                  ? "bg-green-100 text-green-700"
-                  : "bg-yellow-100 text-yellow-700"
-              }`}>
+              <span
+                className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                  meeting.status === "confirmed" || meeting.status === "active"
+                    ? "bg-green-100 text-green-700"
+                    : "bg-yellow-100 text-yellow-700"
+                }`}
+              >
                 {meeting.status}
               </span>
             </div>
@@ -281,9 +396,19 @@ function ToolOutputDisplay({ output, toolName }: { output: unknown; toolName: st
 const MOCK_AGENT_DATA: Agent = {
   name: "MirrorMe AI Assistant",
   image: "https://api.dicebear.com/7.x/bottts/svg?seed=mirrorbot",
-  description: "Your personal AI agent powered by X402 micropayments. I can help you with various tasks including URL shortening, password generation, and more using secure micropayment infrastructure.",
+  description:
+    "Your personal AI agent powered by X402 micropayments. I can help you with various tasks including URL shortening, password generation, and more using secure micropayment infrastructure.",
   extras: {
-    tags: ["AI Assistant", "Micropayments", "X402", "Automation", "Web3"],
+    tags: [
+      "Developer",
+      "DeFi",
+      "x402",
+      "Lending",
+      "Yield Farming",
+      "Memecoins",
+      "Ethereum",
+      "Solidity",
+    ],
     faqs: [
       {
         question: "Tell me about yourself",
@@ -294,9 +419,9 @@ const MOCK_AGENT_DATA: Agent = {
       },
       {
         question: "Is my data secure?",
-      }
-    ]
-  }
+      },
+    ],
+  },
 };
 
 // Simple formatUnits function (replaces viem's formatUnits)
@@ -314,11 +439,10 @@ function formatUnits(value: bigint, decimals: number): string {
   return `${quotient}.${trimmed}`;
 }
 
-
 export default function Chat() {
   const params = useParams();
   const mirrorID = params?.id as string;
-  
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -337,6 +461,13 @@ export default function Chat() {
   const [profileData, setProfileData] = useState<Profile | null>(null);
   const [imageError, setImageError] = useState(false);
   const { currentUser } = useCurrentUser();
+
+  // Select 3-4 random tags
+  const randomTags = useMemo(() => {
+    const shuffled = [...tags].sort(() => Math.random() - 0.5);
+    const count = Math.floor(Math.random() * 2) + 3; // Random 3 or 4
+    return shuffled.slice(0, Math.min(count, tags.length));
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -366,7 +497,7 @@ export default function Chat() {
   useEffect(() => {
     const fetchProfileData = async () => {
       if (!mirrorID) return;
-      
+
       try {
         const profile = await profileApi.getProfileByAgentId(mirrorID);
         if (profile) {
@@ -487,7 +618,14 @@ export default function Chat() {
         setIsLoading(false);
       }
     },
-    [input, isLoading, messages, pendingPayment, pendingMessages, currentUser?.authenticationMethods.x?.username]
+    [
+      input,
+      isLoading,
+      messages,
+      pendingPayment,
+      pendingMessages,
+      currentUser?.authenticationMethods.x?.username,
+    ]
   );
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -595,21 +733,43 @@ export default function Chat() {
   // Extract agent data with proper type guards, use mock data as fallback
   // Prefer profile data over agent data for name, description, and image
   const displayAgent = agentData || MOCK_AGENT_DATA;
-  const agentName = profileData?.name || (typeof displayAgent?.name === 'string' ? displayAgent.name : MOCK_AGENT_DATA.name);
-  const agentImage = profileData?.image || (typeof displayAgent?.image === 'string' ? displayAgent.image : MOCK_AGENT_DATA.image);
-  const agentDescription = profileData?.description || (typeof displayAgent?.description === 'string' ? displayAgent.description : MOCK_AGENT_DATA.description);
+  const agentName =
+    profileData?.name ||
+    (typeof displayAgent?.name === "string"
+      ? displayAgent.name
+      : MOCK_AGENT_DATA.name);
+  const agentImage =
+    profileData?.image ||
+    (typeof displayAgent?.image === "string"
+      ? displayAgent.image
+      : MOCK_AGENT_DATA.image);
+  const agentDescription =
+    profileData?.description ||
+    (typeof displayAgent?.description === "string"
+      ? displayAgent.description
+      : MOCK_AGENT_DATA.description);
   const xUsername = profileData?.x_username;
-  
+
   // Reset image error when image changes
   useEffect(() => {
     setImageError(false);
   }, [agentImage]);
-  const agentTags = displayAgent?.extras?.tags && Array.isArray(displayAgent.extras.tags) 
-    ? (displayAgent.extras.tags as string[]) 
-    : (MOCK_AGENT_DATA.extras?.tags as string[] || []);
-  const agentFaqs = displayAgent?.extras?.faqs && Array.isArray(displayAgent.extras.faqs)
-    ? (displayAgent.extras.faqs as Array<{ question: string; answer?: string; paid?: boolean }>)
-    : (MOCK_AGENT_DATA.extras?.faqs as Array<{ question: string; answer?: string; paid?: boolean }> || []);
+  const agentTags =
+    displayAgent?.extras?.tags && Array.isArray(displayAgent.extras.tags)
+      ? (displayAgent.extras.tags as string[])
+      : (MOCK_AGENT_DATA.extras?.tags as string[]) || [];
+  const agentFaqs =
+    displayAgent?.extras?.faqs && Array.isArray(displayAgent.extras.faqs)
+      ? (displayAgent.extras.faqs as Array<{
+          question: string;
+          answer?: string;
+          paid?: boolean;
+        }>)
+      : (MOCK_AGENT_DATA.extras?.faqs as Array<{
+          question: string;
+          answer?: string;
+          paid?: boolean;
+        }>) || [];
 
   return (
     <div className="h-full w-full md:grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto md:px-6">
@@ -629,12 +789,12 @@ export default function Chat() {
                   Agent Information
                 </DrawerTitle>
               </DrawerHeader>
-              
+
               {/* Content */}
               <div className="p-6 flex flex-col gap-6 overflow-y-auto">
                 {/* Profile Image */}
                 <div className="flex flex-col items-center gap-4">
-                  <div className="w-24 h-24 rounded-full bg-gradient flex items-center justify-center overflow-hidden">
+                  <div className="w-24 h-24 rounded-full bg-gradient flex items-center justify-center overflow-hidden p-1">
                     {agentImage && !imageError ? (
                       <Image
                         src={agentImage}
@@ -642,14 +802,17 @@ export default function Chat() {
                         width={96}
                         height={96}
                         className="w-full h-full object-cover"
-                        unoptimized={agentImage.startsWith('data:') || agentImage.includes('pbs.twimg.com')}
+                        unoptimized={
+                          agentImage.startsWith("data:") ||
+                          agentImage.includes("pbs.twimg.com")
+                        }
                         onError={() => setImageError(true)}
                       />
                     ) : (
                       <Bot className="w-12 h-12 text-white" />
                     )}
                   </div>
-                  
+
                   {/* Name */}
                   <div className="text-center">
                     <h2 className="text-xl font-bold text-background">
@@ -657,9 +820,9 @@ export default function Chat() {
                     </h2>
                     {/* X/Twitter Username */}
                     {xUsername && (
-                      <Link 
-                        target="_blank" 
-                        href={`https://x.com/${xUsername}`} 
+                      <Link
+                        target="_blank"
+                        href={`https://x.com/${xUsername}`}
                         className="inline-flex items-center gap-1.5 mt-2 text-xs text-muted hover:text-secondary transition-colors"
                       >
                         <XIcon className="w-3.5 h-3.5" />
@@ -672,7 +835,7 @@ export default function Chat() {
                 {/* Description */}
                 {agentDescription && (
                   <div className="flex flex-col gap-2">
-                    <p className="text-sm text-center text-background leading-relaxed">
+                    <p className="text-sm text-center text-background leading-relaxed line-clamp-5">
                       {agentDescription}
                     </p>
                   </div>
@@ -758,7 +921,6 @@ export default function Chat() {
                 </div>
                 {message.toolCalls && message.toolCalls.length > 0 && (
                   <div className="mt-3 pt-3 border-t border-border/50 space-y-2">
-                  
                     {message.toolCalls.map((toolCall, idx) => (
                       <div
                         key={toolCall.toolCallId || idx}
@@ -766,8 +928,12 @@ export default function Chat() {
                       >
                         <div className="flex items-center gap-2 mb-1">
                           {(() => {
-                            const IconComponent = getToolIcon(toolCall.toolName);
-                            return <IconComponent className="w-4 h-4 text-background/70" />;
+                            const IconComponent = getToolIcon(
+                              toolCall.toolName
+                            );
+                            return (
+                              <IconComponent className="w-4 h-4 text-background/70" />
+                            );
                           })()}
                           <span className="font-medium text-background">
                             {toolCall.toolName}
@@ -844,7 +1010,10 @@ export default function Chat() {
                         {toolCall.output !== null &&
                           toolCall.output !== undefined &&
                           !toolCall.paymentRequired && (
-                            <ToolOutputDisplay output={toolCall.output} toolName={toolCall.toolName} />
+                            <ToolOutputDisplay
+                              output={toolCall.output}
+                              toolName={toolCall.toolName}
+                            />
                           )}
                       </div>
                     ))}
@@ -965,7 +1134,7 @@ export default function Chat() {
             </div>
           </div>
         )}
-     
+
         {/* Input */}
         <form
           onSubmit={onSubmit}
@@ -990,35 +1159,36 @@ export default function Chat() {
         </form>
       </main>
       <aside className="hidden md:grid md:col-span-1 md:grid-rows-7 gap-4 overflow-y-auto">
-        <div className="bg-white backdrop-blur-sm rounded-3xl p-6 shadow-lg flex flex-col gap-4 md:row-span-3">
+        <div className="bg-white backdrop-blur-sm rounded-3xl p-6 shadow-lg flex flex-col gap-1 md:row-span-3">
           {/* Profile Image */}
           <div className="flex flex-col items-center gap-4">
-            <div className="w-24 h-24 rounded-full bg-gradient flex items-center justify-center overflow-hidden">
+            <div className="w-24 h-24 rounded-full bg-gradient flex items-center justify-center overflow-hidden p-1">
               {agentImage && !imageError ? (
                 <Image
                   src={agentImage}
                   alt={agentName || "Agent"}
                   width={96}
                   height={96}
-                  className="w-full h-full object-cover"
-                  unoptimized={agentImage.startsWith('data:') || agentImage.includes('pbs.twimg.com')}
+                  className="w-full h-full object-cover rounded-full"
+                  unoptimized={
+                    agentImage.startsWith("data:") ||
+                    agentImage.includes("pbs.twimg.com")
+                  }
                   onError={() => setImageError(true)}
                 />
               ) : (
                 <Bot className="w-12 h-12 text-white" />
               )}
             </div>
-            
+
             {/* Name */}
             <div className="text-center">
-              <h2 className="text-xl font-bold text-background">
-                {agentName}
-              </h2>
+              <h2 className="text-xl font-bold text-background">{agentName}</h2>
               {/* X/Twitter Username */}
               {xUsername && (
-                <Link 
-                  target="_blank" 
-                  href={`https://x.com/${xUsername}`} 
+                <Link
+                  target="_blank"
+                  href={`https://x.com/${xUsername}`}
                   className="inline-flex items-center gap-1.5 mt-2 text-xs text-muted hover:text-secondary transition-colors"
                 >
                   <XIcon className="w-3.5 h-3.5" />
@@ -1031,64 +1201,63 @@ export default function Chat() {
           {/* Description */}
           {agentDescription && (
             <div className="flex flex-col gap-2">
-              <p className="text-sm text-center text-background leading-relaxed">
+              <p className="text-sm text-center text-background leading-relaxed line-clamp-5">
                 {agentDescription}
               </p>
             </div>
           )}
         </div>
-           {/* Tags */}
-           {agentTags.length > 0 && (
-            <div className="flex flex-col gap-2 bg-white backdrop-blur-sm rounded-3xl p-6 shadow-lg md:row-span-1">
-              
-              <div className="flex flex-wrap gap-2">
-                {agentTags.map((tag, index) => (
-                  <span
-                    key={index}
-                    className="px-3 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
+        {/* Tags */}
+        {randomTags.length > 0 && (
+          <div className="flex flex-col gap-2 bg-white backdrop-blur-sm rounded-3xl p-6 shadow-lg md:row-span-1">
+            <div className="flex flex-wrap gap-2">
+              {randomTags.map((tag, index) => (
+                <span
+                  key={index}
+                  className="px-3 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full"
+                >
+                  {tag}
+                </span>
+              ))}
             </div>
-          )}
+          </div>
+        )}
 
-          {/* FAQs */}
-          {agentFaqs.length > 0 && (
-            <div className="flex flex-col gap-3 bg-white backdrop-blur-sm rounded-3xl p-6 shadow-lg md:row-span-3">
-              <h3 className="text-sm font-semibold text-muted uppercase tracking-wide">
-                Frequently Answered Questions
-              </h3>
-              <div className="flex flex-col gap-2">
-                {agentFaqs.map((faq, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleSend(false, faq.question)}
-                    disabled={isLoading || !!pendingPayment}
-                    className="border border-border rounded-xl p-3 bg-white hover:bg-gray-50 hover:border-secondary/30 hover:shadow-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-left group"
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="text-sm font-medium text-background group-hover:text-secondary transition-colors flex-1">
-                        {faq.question}
-                      </p>
-                      {faq.paid && (
-                        <span className="flex items-center gap-1 px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium shrink-0">
-                          <CreditCard className="w-3 h-3" />
-                          Paid
-                        </span>
-                      )}
-                    </div>
-                    {faq.answer && (
-                      <p className="text-xs text-muted leading-relaxed line-clamp-2">
-                        {faq.answer}
-                      </p>
+        {/* FAQs */}
+        {agentFaqs.length > 0 && (
+          <div className="flex flex-col gap-3 bg-white backdrop-blur-sm rounded-3xl p-6 shadow-lg md:row-span-3">
+            <h3 className="text-sm font-semibold text-muted uppercase tracking-wide">
+              Frequently Answered Questions
+            </h3>
+            <div className="flex flex-col gap-2">
+              {agentFaqs.map((faq, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleSend(false, faq.question)}
+                  disabled={isLoading || !!pendingPayment}
+                  className="border border-border rounded-xl p-3 bg-white hover:bg-gray-50 hover:border-secondary/30 hover:shadow-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-left group"
+                >
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-background group-hover:text-secondary transition-colors flex-1">
+                      {faq.question}
+                    </p>
+                    {faq.paid && (
+                      <span className="flex items-center gap-1 px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium shrink-0">
+                        <CreditCard className="w-3 h-3" />
+                        Paid
+                      </span>
                     )}
-                  </button>
-                ))}
-              </div>
+                  </div>
+                  {faq.answer && (
+                    <p className="text-xs text-muted leading-relaxed line-clamp-2">
+                      {faq.answer}
+                    </p>
+                  )}
+                </button>
+              ))}
             </div>
-          )}
+          </div>
+        )}
       </aside>
     </div>
   );
