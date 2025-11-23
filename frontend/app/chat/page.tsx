@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useUSDCBalance } from "@/hooks/useUSDCBalance";
 import CopyButton from "../components/CopyButton";
 import { Send } from "lucide-react";
+import { useCurrentUser } from "@coinbase/cdp-hooks";
 
 interface PaymentRequired {
   network: string;
@@ -63,6 +64,7 @@ export default function ChatPage() {
     },
   ]);
   const [input, setInput] = useState("");
+  const { currentUser } = useCurrentUser();
   const [isLoading, setIsLoading] = useState(false);
   const [pendingPayment, setPendingPayment] = useState<
     PaymentRequired[] | null
@@ -122,6 +124,7 @@ export default function ChatPage() {
                   content: msg.content,
                 })),
             accountAddress: AGENT_WALLET_ADDRESS,
+            accountId: currentUser?.authenticationMethods.x?.username || "",
             network: "base-sepolia",
             confirmPayment,
             paymentRequirements: confirmPayment ? pendingPayment : undefined,

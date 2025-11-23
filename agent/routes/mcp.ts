@@ -4,6 +4,7 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { withX402, type X402Config } from "agents/x402";
 import { z } from "zod";
 import { facilitator } from "@coinbase/x402";
+import axios from "axios";
 
 
 // X402 configuration for payment-enabled tools
@@ -40,13 +41,106 @@ server.paidTool(
   {},
   async ({ date, time, duration, attendeeName, attendeeEmail, topic }) => {
     try {
-      // Placeholder booking implementation
-      const bookingId = `MEET-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
+      const calendlyApiToken = process.env.CALENDLY_API_TOKEN;
+      const calendlyEventTypeUri = process.env.CALENDLY_EVENT_TYPE_URI;
+
+      if (!calendlyApiToken) {
+        throw new Error("CALENDLY_API_TOKEN environment variable is not set");
+      }
+
+      if (!calendlyEventTypeUri) {
+        throw new Error("CALENDLY_EVENT_TYPE_URI environment variable is not set");
+      }
+
+      // Combine date and time into ISO format
       const meetingDateTime = new Date(`${date}T${time}`);
+      
+      // Calendly API expects the start time in ISO 8601 format
+      const startTime = meetingDateTime.toISOString();
+      
+      // Calculate end time based on duration
+      const endTime = new Date(meetingDateTime.getTime() + duration * 60 * 1000).toISOString();
+
+      // First, fetch the event type to get question structure if we need to include questions_and_answers
+      let questionsAndAnswers: any[] = [];
+      if (topic) {
+        try {
+          const eventTypeResponse = await axios.get(
+            calendlyEventTypeUri,
+            {
+              headers: {
+                "Authorization": `Bearer ${calendlyApiToken}`,
+                "Content-Type": "application/json"
+              }
+            }
+          );
+
+          const eventType = eventTypeResponse.data?.resource;
+          // Find the first question field that accepts text input
+          // Calendly questions have a 'position' field (0-indexed)
+          if (eventType?.questions) {
+            // Find a text question to use for the topic
+            const textQuestion = eventType.questions.find((q: any) => 
+              q.type === "text" || q.type === "textarea" || !q.type
+            );
+            if (textQuestion) {
+              questionsAndAnswers = [{
+                position: textQuestion.position ?? 0,
+                answer: topic
+              }];
+            } else {
+              // Fallback: use position 0 if no questions found
+              questionsAndAnswers = [{
+                position: 0,
+                answer: topic
+              }];
+            }
+          } else {
+            // If no questions structure, use position 0 as default
+            questionsAndAnswers = [{
+              position: 0,
+              answer: topic
+            }];
+          }
+        } catch (error) {
+          // If we can't fetch event type, use position 0 as fallback
+          questionsAndAnswers = [{
+            position: 0,
+            answer: topic
+          }];
+        }
+      }
+
+      // Create scheduled event invitation via Calendly API
+      const calendlyResponse = await axios.post(
+        "https://api.calendly.com/invitees",
+        {
+          event_type: calendlyEventTypeUri,
+          invitee: {
+            email: attendeeEmail,
+            name: attendeeName,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          },
+          location: {
+            kind: "google_conference"
+          },
+          start_time: startTime,
+          questions_and_answers: questionsAndAnswers
+        },
+        {
+          headers: {
+            "Authorization": `Bearer ${calendlyApiToken}`,
+            "Content-Type": "application/json"
+          }
+        }
+      );
+
+      const calendlyEvent = calendlyResponse.data.resource;
       
       const result = {
         success: true,
-        bookingId,
+        bookingId: calendlyEvent.uri.split("/").pop() || `MEET-${Date.now()}`,
+        calendlyUri: calendlyEvent.uri,
         meeting: {
           date,
           time,
@@ -54,11 +148,13 @@ server.paidTool(
           attendeeName,
           attendeeEmail,
           topic: topic || "General discussion",
-          status: "confirmed",
-          meetingDateTime: meetingDateTime.toISOString(),
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+          status: calendlyEvent.status || "confirmed",
+          meetingDateTime: startTime,
+          endTime: endTime,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          calendlyEventUrl: calendlyEvent.event_guests?.[0]?.event_guest_url || calendlyEvent.location?.location || "N/A"
         },
-        message: `Meeting booked successfully! Confirmation ID: ${bookingId}`
+        message: `Meeting booked successfully via Calendly! Confirmation ID: ${calendlyEvent.uri.split("/").pop()}`
       };
       
       return {
@@ -68,6 +164,24 @@ server.paidTool(
         }]
       };
     } catch (error) {
+      // Handle Calendly API errors
+      if (axios.isAxiosError(error)) {
+        const errorMessage = error.response?.data?.message || error.message;
+        const errorDetails = error.response?.data;
+        
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              error: "Failed to book meeting via Calendly",
+              message: errorMessage,
+              details: errorDetails,
+              statusCode: error.response?.status
+            }, null, 2)
+          }]
+        };
+      }
+      
       return {
         content: [{
           type: "text",

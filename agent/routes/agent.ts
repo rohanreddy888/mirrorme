@@ -15,10 +15,21 @@ const router: Router = Router();
 
 router.post("/", async (req: Request, res: Response) => {
   try {
-    const { messages, accountAddress, confirmPayment, paymentRequirements: confirmedPaymentRequirements } = req.body;
-    
+    const { messages, accountAddress, accountId, confirmPayment, paymentRequirements: confirmedPaymentRequirements } = req.body;
+
+    console.log("accountId", accountId);
+
     // Store payment requirements to return in response
     let paymentRequirements: PaymentRequirements[] | null = null;
+    const cdpClient = new CdpClient();
+    const accountCdp = await cdpClient.evm.getOrCreateAccount({
+      name: accountId
+    });
+    
+    console.log("accountCdp", accountCdp.address);
+
+
+
 
     // Payment confirmation handler - returns true if payment is confirmed, false otherwise
     async function onPaymentRequired(
@@ -86,13 +97,6 @@ router.post("/", async (req: Request, res: Response) => {
     // }
 
     // const account = privateKeyToAccount(privateKey as `0x${string}`);
-
-    const cdp = new CdpClient();
-    const accountCdp = await cdp.evm.getOrCreateAccount({
-      name: "test-accounts-x402s"
-    });
-    console.log("accountCdp", accountCdp.address);
-
 
 
     const client = new Client(
