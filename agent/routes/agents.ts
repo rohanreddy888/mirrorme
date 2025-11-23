@@ -13,9 +13,10 @@ router.post("/", async (req: Request, res: Response) => {
         const description = req.body.description;
         const image = req.body.image;
         const sdk = new SDK({
-        chainId: 80002, // Base sepolia testnet
+        // chainId: 80002, // Base sepolia testnet
+        chainId: 84532, // Base mainnet
         signer: process.env.PAYMENT_PRIVATE_KEY,
-        rpcUrl: "https://polygon-amoy.g.alchemy.com/v2/demo",
+        rpcUrl: "https://base-sepolia.g.alchemy.com/v2/demo",
         ipfs: 'pinata',
         pinataJwt: process.env.PINATA_JWT,
         // Subgraph URL auto-defaults from DEFAULT_SUBGRAPH_URLS
@@ -26,7 +27,7 @@ router.post("/", async (req: Request, res: Response) => {
           description,
           image,
         );
-        agent.setActive(true);
+        // agent.setActive(true);
         await agent.registerIPFS();
         
 
@@ -41,8 +42,9 @@ router.post("/", async (req: Request, res: Response) => {
 router.get("/", async (req: Request, res: Response) => {
   try {
     const sdk = new SDK({
-        chainId: 80002, // Base sepolia testnet
-        rpcUrl: "https://polygon-amoy.g.alchemy.com/v2/demo",
+        // chainId: 80002, // Base sepolia testnet
+        chainId: 84532, // Base mainnet
+        rpcUrl: "https://base-sepolia.g.alchemy.com/v2/demo",
         // Subgraph URL auto-defaults from DEFAULT_SUBGRAPH_URLS
         });
         const result = await sdk.searchAgents({
@@ -99,7 +101,7 @@ router.patch("/:agentId/inactive", async (req: Request, res: Response) => {
     const sdk = new SDK({
       chainId: chainId,
       signer: process.env.PAYMENT_PRIVATE_KEY,
-      rpcUrl: "https://polygon-amoy.g.alchemy.com/v2/demo",
+      rpcUrl: "https://base-sepolia.g.alchemy.com/v2/demo",
       ipfs: 'pinata',
       pinataJwt: process.env.PINATA_JWT,
       // Subgraph URL auto-defaults from DEFAULT_SUBGRAPH_URLS
@@ -112,7 +114,7 @@ router.patch("/:agentId/inactive", async (req: Request, res: Response) => {
     try {
       const agent = await sdk.loadAgent(agentId);
 
-      agent.setActive(false);
+      agent.setActive(true);
       await agent.registerIPFS();
       res.json({ message: "Agent set to inactive successfully" });
     } catch (error) {
