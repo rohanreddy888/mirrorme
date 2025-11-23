@@ -1,7 +1,7 @@
 "use client";
 
 import { Agent, agentsApi } from "@/lib/api";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -9,8 +9,18 @@ import {
   CreditCard,
   Loader2,
   Bot,
+  Filter,
+  ChevronDown,
 } from "lucide-react";
 import { getChainById } from "@/lib/chains";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // Component to handle agent image with fallback
 function AgentImage({ image, name }: { image?: string; name?: string }) {
@@ -48,10 +58,15 @@ function AgentImage({ image, name }: { image?: string; name?: string }) {
   );
 }
 
+type ActiveFilter = "all" | "active" | "inactive";
+type ChainFilter = "all" | "polygon" | "base";
+
 export default function MirrorsPage() {
   const [mirrors, setMirrors] = useState<Agent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState<ActiveFilter>("all");
+  const [chainFilter, setChainFilter] = useState<ChainFilter>("all");
 
   useEffect(() => {
     const fetchMirrors = async () => {
@@ -69,6 +84,33 @@ export default function MirrorsPage() {
     };
     fetchMirrors();
   }, []);
+
+  // Filter mirrors based on active status and chain
+  const filteredMirrors = useMemo(() => {
+    return mirrors.filter((mirror) => {
+      // Filter by active status
+      if (activeFilter !== "all") {
+        const isActive = mirror.active === true;
+        if (activeFilter === "active" && !isActive) return false;
+        if (activeFilter === "inactive" && isActive) return false;
+      }
+
+      // Filter by chain
+      if (chainFilter !== "all") {
+        const polygonChainId = 80002; // Polygon Amoy
+        const baseChainId = 84532; // Base Sepolia
+        
+        if (chainFilter === "polygon" && mirror.chainId !== polygonChainId) {
+          return false;
+        }
+        if (chainFilter === "base" && mirror.chainId !== baseChainId) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [mirrors, activeFilter, chainFilter]);
 
   if (isLoading) {
     return (
@@ -96,23 +138,101 @@ export default function MirrorsPage() {
 
   return (
     <div className="flex flex-col justify-start items-start w-full max-w-7xl gap-6 mx-auto h-full md:px-12 min-h-screen">
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 w-full">
         <h1 className="text-4xl md:text-5xl font-bold">Explore Mirrors</h1>
         <p className="text-white text-base md:text-lg">
           Discover AI agents powered by X402 micropayments
         </p>
       </div>
 
-      {mirrors.length === 0 ? (
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-4 w-full">
+        <div className="flex items-center gap-2">
+          <Filter className="w-4 h-4 text-white/70" />
+          <span className="text-sm font-medium text-white/70">Filters:</span>
+        </div>
+        
+        {/* Active Status Filter */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs flex items-center gap-2"
+            >
+              Status: {activeFilter === "all" ? "All" : activeFilter === "active" ? "Active" : "Inactive"}
+              <ChevronDown className="w-3 h-3" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuRadioGroup
+              value={activeFilter}
+              onValueChange={(value) => setActiveFilter(value as ActiveFilter)}
+            >
+              <DropdownMenuRadioItem value="all">All</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="active">Active</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="inactive">Inactive</DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Chain Filter */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs flex items-center gap-2"
+            >
+              Chain: {chainFilter === "all" ? "All" : chainFilter === "polygon" ? "Polygon" : "Base"}
+              <ChevronDown className="w-3 h-3" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuRadioGroup
+              value={chainFilter}
+              onValueChange={(value) => setChainFilter(value as ChainFilter)}
+            >
+              <DropdownMenuRadioItem value="all">All</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="polygon" className="flex items-center gap-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/chains/polygon.png"
+                  alt="Polygon"
+                  width={16}
+                  height={16}
+                  className="rounded-full"
+                />
+                Polygon
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="base" className="flex items-center gap-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/chains/base.png"
+                  alt="Base"
+                  width={16}
+                  height={16}
+                  className="rounded-full"
+                />
+                Base
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {filteredMirrors.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-4 bg-white/50 rounded-2xl border border-border p-12 w-full h-full">
           <p className="text-muted text-lg">No mirrors found</p>
           <p className="text-muted/70 text-sm">
-            Check back later for available agents
+            {mirrors.length === 0
+              ? "Check back later for available agents"
+              : "Try adjusting your filters"}
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {mirrors.map((mirror) => (
+          {filteredMirrors.map((mirror) => (
             <Link
               key={mirror.agentId || mirror.name}
               href={`/mirrors/${mirror.agentId}/chat`}

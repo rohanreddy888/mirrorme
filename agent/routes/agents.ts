@@ -80,5 +80,50 @@ router.get("/:id/wallet", async (req: Request, res: Response) => {
   }
 });
 
+router.patch("/:agentId/inactive", async (req: Request, res: Response) => {
+  try {
+    const { agentId } = req.params;
+    
+    if (!agentId) {
+      return res.status(400).json({ error: "Agent ID is required" });
+    }
+
+    // Parse agentId format: "chainId:agentNumber"
+    const [chainIdStr] = agentId.split(":");
+    const chainId = parseInt(chainIdStr, 10);
+    
+    if (isNaN(chainId)) {
+      return res.status(400).json({ error: "Invalid agent ID format. Expected format: chainId:agentNumber" });
+    }
+
+    const sdk = new SDK({
+      chainId: chainId,
+      signer: process.env.PAYMENT_PRIVATE_KEY,
+      rpcUrl: "https://polygon-amoy.g.alchemy.com/v2/demo",
+      ipfs: 'pinata',
+      pinataJwt: process.env.PINATA_JWT,
+      // Subgraph URL auto-defaults from DEFAULT_SUBGRAPH_URLS
+    });
+
+
+    // Try to get the agent and set it inactive
+    // Note: getAgent may return AgentSummary (read-only) or Agent (mutable)
+    // We'll try to call setActive if available
+    try {
+      const agent = await sdk.loadAgent(agentId);
+
+      agent.setActive(false);
+      await agent.registerIPFS();
+      res.json({ message: "Agent set to inactive successfully" });
+    } catch (error) {
+      console.error("Error setting agent inactive:", error);
+      res.status(500).json({ error: "Failed to set agent inactive" });
+    }
+  } catch (error) {
+    console.error("Error setting agent inactive:", error);
+    res.status(500).json({ error: "Failed to set agent inactive" });
+  }
+});
+
 export default router;
 
