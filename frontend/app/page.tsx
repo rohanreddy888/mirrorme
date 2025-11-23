@@ -6,10 +6,10 @@ export default function Home() {
     <div className="flex flex-col items-center justify-center h-full">
     
       <div className="flex flex-col items-center justify-center gap-6 max-w-2xl text-center">
-        <h1 className="text-6xl font-bold text-center capitalize">
+        <h1 className="md:text-6xl text-5xl font-bold text-center capitalize">
           Turn your influence into interaction
         </h1>
-        <p className="">
+        <p className="md:text-base text-sm">
           MirrorMe turns your influence into interaction with an AI version of
           you, powered by X402 micropayments, a dynamic reputation score, and
           seamless discoverability through ERC-8004
