@@ -19,9 +19,21 @@ import Link from "next/link";
 import XIcon from "@/lib/icons/x-icon";
 import { OTPDialog } from "@/components/otp-dialog";
 import { profileApi } from "@/lib/api/profile";
+import { agentsApi } from "@/lib/api/agents";
 import { Toggle } from "@/components/ui/toggle";
 import MirrorIcon from "@/lib/icons/mirror";
 import { toast } from "sonner";
+import dynamic from "next/dynamic";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import mirrorAnimation from "@/public/lottie/mirror.json";
+
+const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
 
 export default function ProfilePage() {
   const { currentUser } = useCurrentUser();
@@ -77,6 +89,8 @@ export default function ProfilePage() {
     text: string;
   } | null>(null);
   const [isLoadingTwitter, setIsLoadingTwitter] = useState(false);
+  const [isCreatingAgent, setIsCreatingAgent] = useState(false);
+  const [agentId, setAgentId] = useState<string | null>(null);
 
   // Function to fetch Twitter profile data
   const fetchTwitterData = useCallback(
@@ -139,6 +153,11 @@ export default function ProfilePage() {
             if (profile.image) {
               setProfileImage(profile.image);
               hasProfileImage = true;
+            }
+            // Set mirroring state based on agent_id
+            if (profile.agent_id) {
+              setAgentId(profile.agent_id);
+              setIsMirroring(true);
             }
           }
         } catch (error) {
@@ -350,21 +369,70 @@ export default function ProfilePage() {
           <div className="flex items-center gap-2">
             
             <Toggle
-              aria-label="Toggle bookmark"
+              aria-label="Toggle MirrorMe"
               size="default"
               variant="outline"
               className="data-[state=on]:bg-secondary data-[state=on]:text-white px-4 py-2 rounded-full"
-              defaultPressed={isMirroring}
-              onPressedChange={(checked: boolean) => {
-                setIsMirroring(checked);
+              pressed={isMirroring}
+              disabled={isCreatingAgent || !xUsername}
+              onPressedChange={async (checked: boolean) => {
                 if (checked) {
-                  toast("Agent has been spawned", {
-                    description: "You will see your agent on the MirrorMe",
-                  });
+                  // Create agent
+                  if (!xUsername) {
+                    toast.error("X username is required to create an agent");
+                    return;
+                  }
+
+                  if (!name || !description) {
+                    toast.error("Please fill in name and description before creating an agent");
+                    return;
+                  }
+
+                  setIsCreatingAgent(true);
+                  try {
+                    const response = await agentsApi.create({
+                      name: name,
+                      description: description,
+                      image: profileImage || "",
+                    });
+
+                    // Update profile with agent_id
+                    await profileApi.updateAgentId(xUsername, response.result.agentId);
+                    
+                    setAgentId(response.result.agentId);
+                    setIsMirroring(true);
+                    
+                    toast.success("Agent has been spawned", {
+                      description: "You will see your agent on the MirrorMe",
+                    });
+                  } catch (error) {
+                    console.error("Failed to create agent:", error);
+                    toast.error("Failed to create agent", {
+                      description: error instanceof Error ? error.message : "Please try again",
+                    });
+                    setIsMirroring(false);
+                  } finally {
+                    setIsCreatingAgent(false);
+                  }
                 } else {
-                  toast("Agent has been deactivated", {
-                    description: "You will no longer see your agent on the MirrorMe",
-                  });
+                  // Deactivate - set agent_id to null
+                  if (xUsername) {
+                    try {
+                      await profileApi.updateAgentId(xUsername, null);
+                      setAgentId(null);
+                      setIsMirroring(false);
+                      toast.success("Agent has been deactivated", {
+                        description: "You will no longer see your agent on the MirrorMe",
+                      });
+                    } catch (error) {
+                      console.error("Failed to deactivate agent:", error);
+                      toast.error("Failed to deactivate agent", {
+                        description: error instanceof Error ? error.message : "Please try again",
+                      });
+                    }
+                  } else {
+                    setIsMirroring(false);
+                  }
                 }
               }}
             >
@@ -809,6 +877,30 @@ export default function ProfilePage() {
         }
         maxLength={6}
       />
+
+      {/* Agent Creation Loading Dialog */}
+      <Dialog open={isCreatingAgent} onOpenChange={() => {}}>
+        <DialogContent
+          showCloseButton={false}
+          className="max-w-md flex flex-col items-center justify-center gap-6 p-8"
+        >
+          <DialogHeader className="text-center">
+            <DialogTitle className="text-2xl font-bold">
+              Creating your MirrorMe...
+            </DialogTitle>
+            <DialogDescription className="text-base mt-2">
+              This may take a few moments. Please don&apos;t close this window.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center justify-center w-full">
+            <Lottie
+              animationData={mirrorAnimation}
+              loop={true}
+              style={{ width: 300, height: 300 }}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

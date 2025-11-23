@@ -182,9 +182,7 @@ router.patch("/:userId/agent", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "User ID is required" });
     }
 
-    if (!agent_id) {
-      return res.status(400).json({ error: "Agent ID is required" });
-    }
+    // Allow null to deactivate agent
 
     const { data, error } = await supabase
       .from("profiles")
@@ -303,7 +301,7 @@ router.get("/twitter/:username", async (req: Request, res: Response) => {
     try {
       const response = await axios.get(twitterApiUrl, {
         params: {
-          "user.fields": "image,name,description,username"
+          "user.fields": "profile_image_url,name,description,username"
         },
         headers: {
           Authorization: `Bearer ${twitterBearerToken}`,
@@ -316,7 +314,7 @@ router.get("/twitter/:username", async (req: Request, res: Response) => {
       }
 
       // Get the highest resolution profile image (replace _normal with _400x400 or _original)
-      const profileImageUrl = user.image?.replace("_normal", "_400x400") || user.image;
+      const profileImageUrl = user.profile_image_url?.replace("_normal", "_400x400") || user.profile_image_url;
 
       res.json({
         name: user.name || null,

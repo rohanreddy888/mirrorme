@@ -118,7 +118,7 @@ class ProfileApiClient {
   /**
    * Update agent ID for a profile
    */
-  async updateAgentId(userId: string, agentId: string): Promise<Profile> {
+  async updateAgentId(userId: string, agentId: string | null): Promise<Profile> {
     const response = await fetch(`${this.baseUrl}/${userId}/agent`, {
       method: "PATCH",
       headers: {

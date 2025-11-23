@@ -6,7 +6,15 @@ export interface CreateAgentRequest {
   image: string;
 }
 
+export interface CreateAgentResult {
+  agentId: string;
+  name: string;
+  description: string;
+  image: string;
+}
+
 export interface CreateAgentResponse {
+  result: CreateAgentResult;
   message: string;
 }
 

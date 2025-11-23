@@ -26,9 +26,11 @@ router.post("/", async (req: Request, res: Response) => {
           description,
           image,
         );
+        agent.setActive(true);
         await agent.registerIPFS();
+        
 
-        res.json({ message: "Agent created successfully" });
+        res.json({result: { agentId: agent.agentId, name: name, description: description, image: image}, message: "Agent created successfully" });
   } catch (error) {
     console.error("Error in registration route:", error);
     res.status(500).json({ error: "Failed to process registration" });
