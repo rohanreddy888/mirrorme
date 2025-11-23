@@ -81,7 +81,7 @@ export default function Header() {
             <Menu className="size-6" />
           </button>
         </SheetTrigger>
-        <SheetContent side="left" className="w-[300px] sm:w-[400px]">
+        <SheetContent side="right" className="w-[300px] sm:w-[400px]">
           <SheetHeader>
             <SheetTitle>
               <Image
