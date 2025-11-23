@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import {
   useCurrentUser,
   useLinkGoogle,
@@ -69,29 +69,80 @@ export default function ProfilePage() {
   }>({});
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [isLoadingTwitter, setIsLoadingTwitter] = useState(false);
 
-  // Load existing profile on mount
+  // Function to fetch Twitter profile data
+  const fetchTwitterData = useCallback(async (username: string, skipIfImageExists = false) => {
+    // Skip Twitter API call if we already have a profile image and skipIfImageExists is true
+    if (skipIfImageExists && profileImage) {
+      return false;
+    }
+
+    setIsLoadingTwitter(true);
+    try {
+      const twitterData = await profileApi.getTwitterProfile(username);
+      if (twitterData) {
+        // Populate with Twitter data if available
+        if (twitterData.name) setName(twitterData.name);
+        if (twitterData.description) setDescription(twitterData.description);
+        // Only update image if we don't already have one
+        if (twitterData.image && !profileImage) {
+          setProfileImage(twitterData.image);
+        }
+        setSaveMessage({ type: "success", text: "Twitter profile data loaded successfully!" });
+        setTimeout(() => setSaveMessage(null), 3000);
+        return true;
+      }
+    } catch (twitterError) {
+      console.warn("Failed to fetch Twitter profile:", twitterError);
+      setSaveMessage({ 
+        type: "error", 
+        text: twitterError instanceof Error ? twitterError.message : "Failed to fetch Twitter profile data" 
+      });
+      return false;
+    } finally {
+      setIsLoadingTwitter(false);
+    }
+    return false;
+  }, [profileImage]);
+
+  // Load existing profile and Twitter data on mount
   useEffect(() => {
     const loadProfile = async () => {
       if (!xUsername) return; // Wait for X username to be available
       
       try {
-        const profile = await profileApi.getProfile(xUsername);
-        if (profile) {
-          setName(profile.name || "");
-          setDescription(profile.description || "");
-          // Note: profileImage would need to be stored separately or in a different field
+        // First, try to load saved profile
+        let hasProfileImage = false;
+        try {
+          const profile = await profileApi.getProfile(xUsername);
+          if (profile) {
+            // Load saved data
+            if (profile.name) setName(profile.name);
+            if (profile.description) setDescription(profile.description);
+            if (profile.image) {
+              setProfileImage(profile.image);
+              hasProfileImage = true;
+            }
+          }
+        } catch (error) {
+          // Profile doesn't exist yet, which is fine - we'll use Twitter data
+          if (error instanceof Error && error.message !== "Profile not found") {
+            console.error("Error loading profile:", error);
+          }
+        }
+
+        // Only fetch Twitter data if there's no profile image
+        if (!hasProfileImage) {
+          await fetchTwitterData(xUsername, false);
         }
       } catch (error) {
-        // Profile doesn't exist yet, which is fine
-        if (error instanceof Error && error.message !== "Profile not found") {
-          console.error("Error loading profile:", error);
-        }
+        console.error("Error loading profile data:", error);
       }
     };
 
     loadProfile();
-  }, [xUsername]);
+  }, [xUsername, fetchTwitterData]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -245,6 +296,7 @@ export default function ProfilePage() {
         description: description || undefined,
         x_username: xUsername || undefined,
         agent_id: null, // Will be set when mirror option is enabled
+        image: profileImage || undefined,
       });
 
       setSaveMessage({ type: "success", text: "Profile saved successfully!" });
@@ -270,11 +322,31 @@ export default function ProfilePage() {
         {/* Header */}
         <div className="flex flex-row items-start justify-between gap-2 w-full mb-8">
           <h1 className="text-4xl font-bold">Profile</h1>
-          {xUsername && (
-            <Link target="_blank" href={`https://x.com/${xUsername}`} className="text-sm bg-secondary text-white px-4 py-2 rounded-full flex items-center gap-2">
-              <XIcon className="w-4 h-4" /> {xUsername}
-            </Link>
-          )}
+          <div className="flex items-center gap-2">
+            {xUsername && (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => fetchTwitterData(xUsername, true)}
+                  disabled={isLoadingTwitter}
+                  className="text-sm"
+                >
+                  {isLoadingTwitter ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      Loading...
+                    </>
+                  ) : (
+                    "Refresh from Twitter"
+                  )}
+                </Button>
+                <Link target="_blank" href={`https://x.com/${xUsername}`} className="text-sm bg-secondary text-white px-4 py-2 rounded-full flex items-center gap-2">
+                  <XIcon className="w-4 h-4" /> {xUsername}
+                </Link>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Profile Image Upload */}

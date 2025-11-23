@@ -1,9 +1,13 @@
 "use client";
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useParams } from "next/navigation";
 import { SendHorizonal, Bot, Info, Calendar, CheckCircle2, XCircle, Clock, User, Mail, MapPin, ExternalLink, Wrench, Zap, Settings, FileText, Search, Link as LinkIcon, Key, Database, Code, Image as ImageIcon, Video, Music, Globe, ShoppingCart, CreditCard } from "lucide-react";
 import CopyButton from "@/app/components/CopyButton";
 import { Agent, agentsApi } from "@/lib/api";
+import { profileApi, type Profile } from "@/lib/api/profile";
 import Image from "next/image";
+import XIcon from "@/lib/icons/x-icon";
+import Link from "next/link";
 import {
   Drawer,
   DrawerContent,
@@ -282,14 +286,11 @@ const MOCK_AGENT_DATA: Agent = {
     tags: ["AI Assistant", "Micropayments", "X402", "Automation", "Web3"],
     faqs: [
       {
-        question: "What is X402?",
+        question: "Tell me about yourself",
       },
       {
-        question: "How do payments work?",
-      },
-      {
-        question: "What services are available?",
-        answer: "I can help with URL shortening, password generation, web searches, data lookups, and various other API-based services. Try asking 'What tools are available?' for a complete list."
+        question: "Book a meeting for tomorrow 10 am",
+        paid: true,
       },
       {
         question: "Is my data secure?",
@@ -314,8 +315,10 @@ function formatUnits(value: bigint, decimals: number): string {
 }
 
 
-export default function Chat({ mirrorID }: { mirrorID: string }) {
-  console.log(mirrorID);
+export default function Chat() {
+  const params = useParams();
+  const mirrorID = params?.id as string;
+  
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -331,7 +334,8 @@ export default function Chat({ mirrorID }: { mirrorID: string }) {
   const [pendingMessages, setPendingMessages] = useState<Message[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [agentData, setAgentData] = useState<Agent | null>(null);
-  const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
+  const [profileData, setProfileData] = useState<Profile | null>(null);
+  const [imageError, setImageError] = useState(false);
   const { currentUser } = useCurrentUser();
 
   const scrollToBottom = () => {
@@ -356,6 +360,26 @@ export default function Chat({ mirrorID }: { mirrorID: string }) {
       }
     };
     fetchAgentData();
+  }, [mirrorID]);
+
+  // Fetch profile data by agent ID
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      if (!mirrorID) return;
+      
+      try {
+        const profile = await profileApi.getProfileByAgentId(mirrorID);
+        if (profile) {
+          setProfileData(profile);
+        }
+      } catch (error) {
+        // Profile might not exist for this agent, which is fine
+        if (error instanceof Error && error.message !== "Profile not found") {
+          console.error("Error fetching profile data:", error);
+        }
+      }
+    };
+    fetchProfileData();
   }, [mirrorID]);
 
   const handleSend = useCallback(
@@ -463,7 +487,7 @@ export default function Chat({ mirrorID }: { mirrorID: string }) {
         setIsLoading(false);
       }
     },
-    [input, isLoading, messages, pendingPayment, pendingMessages]
+    [input, isLoading, messages, pendingPayment, pendingMessages, currentUser?.authenticationMethods.x?.username]
   );
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -569,16 +593,23 @@ export default function Chat({ mirrorID }: { mirrorID: string }) {
   };
 
   // Extract agent data with proper type guards, use mock data as fallback
+  // Prefer profile data over agent data for name, description, and image
   const displayAgent = agentData || MOCK_AGENT_DATA;
-  const agentName = typeof displayAgent?.name === 'string' ? displayAgent.name : MOCK_AGENT_DATA.name;
-  const agentImage = typeof displayAgent?.image === 'string' ? displayAgent.image : MOCK_AGENT_DATA.image;
-  const agentDescription = typeof displayAgent?.description === 'string' ? displayAgent.description : MOCK_AGENT_DATA.description;
+  const agentName = profileData?.name || (typeof displayAgent?.name === 'string' ? displayAgent.name : MOCK_AGENT_DATA.name);
+  const agentImage = profileData?.image || (typeof displayAgent?.image === 'string' ? displayAgent.image : MOCK_AGENT_DATA.image);
+  const agentDescription = profileData?.description || (typeof displayAgent?.description === 'string' ? displayAgent.description : MOCK_AGENT_DATA.description);
+  const xUsername = profileData?.x_username;
+  
+  // Reset image error when image changes
+  useEffect(() => {
+    setImageError(false);
+  }, [agentImage]);
   const agentTags = displayAgent?.extras?.tags && Array.isArray(displayAgent.extras.tags) 
     ? (displayAgent.extras.tags as string[]) 
     : (MOCK_AGENT_DATA.extras?.tags as string[] || []);
   const agentFaqs = displayAgent?.extras?.faqs && Array.isArray(displayAgent.extras.faqs)
-    ? (displayAgent.extras.faqs as Array<{ question: string; answer: string }>)
-    : (MOCK_AGENT_DATA.extras?.faqs as Array<{ question: string; answer: string }> || []);
+    ? (displayAgent.extras.faqs as Array<{ question: string; answer?: string; paid?: boolean }>)
+    : (MOCK_AGENT_DATA.extras?.faqs as Array<{ question: string; answer?: string; paid?: boolean }> || []);
 
   return (
     <div className="h-full w-full md:grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto md:px-6">
@@ -604,16 +635,15 @@ export default function Chat({ mirrorID }: { mirrorID: string }) {
                 {/* Profile Image */}
                 <div className="flex flex-col items-center gap-4">
                   <div className="w-24 h-24 rounded-full bg-gradient flex items-center justify-center overflow-hidden">
-                    {agentImage ? (
+                    {agentImage && !imageError ? (
                       <Image
                         src={agentImage}
                         alt={agentName || "Agent"}
                         width={96}
                         height={96}
                         className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.style.display = "none";
-                        }}
+                        unoptimized={agentImage.startsWith('data:') || agentImage.includes('pbs.twimg.com')}
+                        onError={() => setImageError(true)}
                       />
                     ) : (
                       <Bot className="w-12 h-12 text-white" />
@@ -625,6 +655,17 @@ export default function Chat({ mirrorID }: { mirrorID: string }) {
                     <h2 className="text-xl font-bold text-background">
                       {agentName}
                     </h2>
+                    {/* X/Twitter Username */}
+                    {xUsername && (
+                      <Link 
+                        target="_blank" 
+                        href={`https://x.com/${xUsername}`} 
+                        className="inline-flex items-center gap-1.5 mt-2 text-xs text-muted hover:text-secondary transition-colors"
+                      >
+                        <XIcon className="w-3.5 h-3.5" />
+                        <span>@{xUsername}</span>
+                      </Link>
+                    )}
                   </div>
                 </div>
 
@@ -664,17 +705,29 @@ export default function Chat({ mirrorID }: { mirrorID: string }) {
                     </h3>
                     <div className="flex flex-col gap-2">
                       {agentFaqs.map((faq, index) => (
-                        <div
+                        <button
                           key={index}
-                          className="border border-border rounded-xl p-3"
+                          onClick={() => handleSend(false, faq.question)}
+                          disabled={isLoading || !!pendingPayment}
+                          className="border border-border rounded-xl p-3 text-left bg-white hover:bg-gray-50 hover:border-secondary/30 hover:shadow-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
                         >
-                          <p className="text-sm font-medium text-background mb-2">
-                            {faq.question}
-                          </p>
-                          <p className="text-sm text-muted leading-relaxed">
-                            {faq.answer}
-                          </p>
-                        </div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <p className="text-sm font-medium text-background group-hover:text-secondary transition-colors flex-1">
+                              {faq.question}
+                            </p>
+                            {faq.paid && (
+                              <span className="flex items-center gap-1 px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">
+                                <CreditCard className="w-3 h-3" />
+                                Paid
+                              </span>
+                            )}
+                          </div>
+                          {faq.answer && (
+                            <p className="text-sm text-muted leading-relaxed">
+                              {faq.answer}
+                            </p>
+                          )}
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -941,16 +994,15 @@ export default function Chat({ mirrorID }: { mirrorID: string }) {
           {/* Profile Image */}
           <div className="flex flex-col items-center gap-4">
             <div className="w-24 h-24 rounded-full bg-gradient flex items-center justify-center overflow-hidden">
-              {agentImage ? (
+              {agentImage && !imageError ? (
                 <Image
                   src={agentImage}
                   alt={agentName || "Agent"}
                   width={96}
                   height={96}
                   className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none";
-                  }}
+                  unoptimized={agentImage.startsWith('data:') || agentImage.includes('pbs.twimg.com')}
+                  onError={() => setImageError(true)}
                 />
               ) : (
                 <Bot className="w-12 h-12 text-white" />
@@ -962,20 +1014,28 @@ export default function Chat({ mirrorID }: { mirrorID: string }) {
               <h2 className="text-xl font-bold text-background">
                 {agentName}
               </h2>
+              {/* X/Twitter Username */}
+              {xUsername && (
+                <Link 
+                  target="_blank" 
+                  href={`https://x.com/${xUsername}`} 
+                  className="inline-flex items-center gap-1.5 mt-2 text-xs text-muted hover:text-secondary transition-colors"
+                >
+                  <XIcon className="w-3.5 h-3.5" />
+                  <span>@{xUsername}</span>
+                </Link>
+              )}
             </div>
           </div>
 
           {/* Description */}
           {agentDescription && (
             <div className="flex flex-col gap-2">
-          
               <p className="text-sm text-center text-background leading-relaxed">
                 {agentDescription}
               </p>
             </div>
           )}
-
-       
         </div>
            {/* Tags */}
            {agentTags.length > 0 && (
@@ -1002,21 +1062,29 @@ export default function Chat({ mirrorID }: { mirrorID: string }) {
               </h3>
               <div className="flex flex-col gap-2">
                 {agentFaqs.map((faq, index) => (
-                  <div
+                  <button
                     key={index}
-                    className="border border-border rounded-xl overflow-hidden"
+                    onClick={() => handleSend(false, faq.question)}
+                    disabled={isLoading || !!pendingPayment}
+                    className="border border-border rounded-xl p-3 bg-white hover:bg-gray-50 hover:border-secondary/30 hover:shadow-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-left group"
                   >
-                    <button
-                      onClick={() => setExpandedFaq(expandedFaq === index ? null : index)}
-                      className="w-full flex items-center justify-between p-3 bg-white hover:bg-gray-50 transition-colors text-left"
-                    >
-                      <span className="text-sm font-medium text-background">
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-sm font-medium text-background group-hover:text-secondary transition-colors flex-1">
                         {faq.question}
-                      </span>
-                      
-                    </button>
-               
-                  </div>
+                      </p>
+                      {faq.paid && (
+                        <span className="flex items-center gap-1 px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium shrink-0">
+                          <CreditCard className="w-3 h-3" />
+                          Paid
+                        </span>
+                      )}
+                    </div>
+                    {faq.answer && (
+                      <p className="text-xs text-muted leading-relaxed line-clamp-2">
+                        {faq.answer}
+                      </p>
+                    )}
+                  </button>
                 ))}
               </div>
             </div>

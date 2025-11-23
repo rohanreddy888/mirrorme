@@ -7,8 +7,16 @@ export interface Profile {
   description: string | null;
   x_username: string | null;
   agent_id: string | null;
+  image: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface TwitterProfileData {
+  name: string | null;
+  description: string | null;
+  image: string | null;
+  username: string;
 }
 
 export interface CreateProfileRequest {
@@ -17,6 +25,7 @@ export interface CreateProfileRequest {
   description?: string;
   x_username?: string;
   agent_id?: string | null;
+  image?: string;
 }
 
 export interface UpdateProfileRequest {
@@ -145,6 +154,48 @@ class ProfileApiClient {
       const error = await response.json().catch(() => ({ error: "Failed to delete profile" }));
       throw new Error(error.message || error.error || "Failed to delete profile");
     }
+  }
+
+  /**
+   * Get profile by agent ID
+   */
+  async getProfileByAgentId(agentId: string): Promise<Profile> {
+    const response = await fetch(`${this.baseUrl}/agent/${agentId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        throw new Error("Profile not found");
+      }
+      const error = await response.json().catch(() => ({ error: "Failed to fetch profile" }));
+      throw new Error(error.message || error.error || "Failed to fetch profile");
+    }
+
+    const data: ProfileResponse = await response.json();
+    return data.profile;
+  }
+
+  /**
+   * Fetch Twitter profile data by username
+   */
+  async getTwitterProfile(username: string): Promise<TwitterProfileData> {
+    const response = await fetch(`${this.baseUrl}/twitter/${username}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: "Failed to fetch Twitter profile" }));
+      throw new Error(error.message || error.error || "Failed to fetch Twitter profile");
+    }
+
+    return await response.json();
   }
 }
 
