@@ -902,7 +902,7 @@ export default function Chat() {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 bg-white rounded-2xl min-h-0">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 bg-white rounded-2xl min-h-0 max-h-[calc(100dvh-20rem)]">
           {messages.map((message) => (
             <div
               key={message.id}

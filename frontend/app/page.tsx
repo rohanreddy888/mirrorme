@@ -37,7 +37,7 @@ export default function Home() {
   }, []);
   return (
     <div className="flex flex-col items-start justify-start h-full gap-6 max-w-7xl mx-auto">
-      <div className="flex flex-col items-center justify-center gap-6 text-center min-h-[calc(100dvh-8rem)] max-w-2xl mx-auto">
+      <div className="flex flex-col items-center justify-center gap-6 text-center md:min-h-[calc(100dvh-13rem)] min-h-[calc(100dvh-8rem)] max-w-2xl mx-auto">
         <h1 className="md:text-6xl text-5xl font-bold text-center capitalize">
           Turn your influence into interaction
         </h1>
@@ -63,7 +63,7 @@ export default function Home() {
       </div>
       <div
         id="how-it-works"
-        className="min-h-[calc(100dvh-8rem)] w-full flex flex-col-reverse md:grid grid-cols-2 items-center gap-6"
+        className="min-h-[calc(100dvh-8rem)] w-full flex flex-col-reverse md:grid grid-cols-2 items-center gap-6 max-w-6xl mx-auto"
       >
         <div className="flex flex-col items-start justify-start gap-6 text-left">
           <h1 className="md:text-6xl text-5xl font-bold text-left capitalize">
@@ -88,7 +88,7 @@ export default function Home() {
           )}
         </div>
       </div>
-      <div className="min-h-[calc(100dvh-8rem)] w-full flex flex-col md:grid grid-cols-2 items-center gap-6">
+      <div className="min-h-[calc(100dvh-8rem)] w-full flex flex-col md:grid grid-cols-2 items-center gap-6 max-w-6xl mx-auto">
         <div className="flex items-start justify-start">
           <Image src="/graphics/interactions.svg" alt="MirrorMe" width={550} height={550} />
         </div>
@@ -99,7 +99,7 @@ export default function Home() {
           <p className="md:text-base text-sm md:text-right text-left">
             MirrorMe works by creating a mirror of your social media presence.
             It tracks your activity and interactions, and uses that data to
-            create a mirror of your social media presence.
+            create a mirror of you which can interact and provide paid services example booking a meeting using x402 micropayments. All the mirror agents are discoverable through ERC-8004 with a dynamic reputation score.
           </p>
         </div>
       </div>
