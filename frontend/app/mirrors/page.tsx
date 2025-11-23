@@ -263,7 +263,7 @@ export default function MirrorsPage() {
               <div className="bg-white backdrop-blur-sm rounded-xl border border-border hover:border-white hover:shadow-lg transition-all duration-300 h-full flex flex-col overflow-hidden">
                 {/* Image and Status Badges */}
                 <div className="relative">
-                  <div className="aspect-video w-full bg-primary flex items-center justify-center relative overflow-hidden">
+                  <div className="aspect-square w-full bg-primary flex items-center justify-center relative overflow-hidden">
                     <AgentImage
                       key={mirror.agentId || mirror.name}
                       image={mirror.image}
