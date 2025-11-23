@@ -1,9 +1,16 @@
 "use client";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { SendHorizonal, Bot } from "lucide-react";
+import { SendHorizonal, Bot, Info } from "lucide-react";
 import CopyButton from "@/app/components/CopyButton";
 import { Agent, agentsApi } from "@/lib/api";
 import Image from "next/image";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 
 interface PaymentRequired {
   network: string;
@@ -346,10 +353,111 @@ export default function Chat({ mirrorID }: { mirrorID: string }) {
     : (MOCK_AGENT_DATA.extras?.faqs as Array<{ question: string; answer: string }> || []);
 
   return (
-    <div className="h-screen md:h-full w-full md:grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto md:px-6 flex flex-col">
-      <main className="flex w-full max-w-6xl flex-col gap-4 bg-white/80 backdrop-blur-sm rounded-3xl p-4 md:p-6 shadow-lg flex-1 md:h-full md:col-span-2 min-h-0">
+    <div className="h-full w-full md:grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto md:px-6">
+      <main className="flex w-full max-w-6xl flex-col gap-4 bg-white/80 backdrop-blur-sm rounded-3xl p-4 md:p-6 shadow-lg h-full md:col-span-2">
+        {/* Mobile Agent Info Button */}
+        <div className="flex md:hidden justify-end">
+          <Drawer direction="right">
+            <DrawerTrigger asChild>
+              <button className="flex items-center gap-2 px-4 py-2 bg-gradient text-white rounded-full text-sm font-medium shadow-lg">
+                <Info className="w-4 h-4" />
+                Agent Info
+              </button>
+            </DrawerTrigger>
+            <DrawerContent className="h-full">
+              <DrawerHeader className="border-b border-border">
+                <DrawerTitle className="text-lg font-bold text-background">
+                  Agent Information
+                </DrawerTitle>
+              </DrawerHeader>
+              
+              {/* Content */}
+              <div className="p-6 flex flex-col gap-6 overflow-y-auto">
+                {/* Profile Image */}
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-24 h-24 rounded-full bg-gradient flex items-center justify-center overflow-hidden">
+                    {agentImage ? (
+                      <Image
+                        src={agentImage}
+                        alt={agentName || "Agent"}
+                        width={96}
+                        height={96}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
+                      />
+                    ) : (
+                      <Bot className="w-12 h-12 text-white" />
+                    )}
+                  </div>
+                  
+                  {/* Name */}
+                  <div className="text-center">
+                    <h2 className="text-xl font-bold text-background">
+                      {agentName}
+                    </h2>
+                  </div>
+                </div>
+
+                {/* Description */}
+                {agentDescription && (
+                  <div className="flex flex-col gap-2">
+                    <p className="text-sm text-center text-background leading-relaxed">
+                      {agentDescription}
+                    </p>
+                  </div>
+                )}
+
+                {/* Tags */}
+                {agentTags.length > 0 && (
+                  <div className="flex flex-col gap-3">
+                    <h3 className="text-sm font-semibold text-muted uppercase tracking-wide">
+                      Tags
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {agentTags.map((tag, index) => (
+                        <span
+                          key={index}
+                          className="px-3 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* FAQs */}
+                {agentFaqs.length > 0 && (
+                  <div className="flex flex-col gap-3">
+                    <h3 className="text-sm font-semibold text-muted uppercase tracking-wide">
+                      Frequently Answered Questions
+                    </h3>
+                    <div className="flex flex-col gap-2">
+                      {agentFaqs.map((faq, index) => (
+                        <div
+                          key={index}
+                          className="border border-border rounded-xl p-3"
+                        >
+                          <p className="text-sm font-medium text-background mb-2">
+                            {faq.question}
+                          </p>
+                          <p className="text-sm text-muted leading-relaxed">
+                            {faq.answer}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </DrawerContent>
+          </Drawer>
+        </div>
+
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 bg-white rounded-2xl border border-border min-h-0">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 bg-white rounded-2xl min-h-0">
           {messages.map((message) => (
             <div
               key={message.id}
@@ -614,8 +722,8 @@ export default function Chat({ mirrorID }: { mirrorID: string }) {
           </button>
         </form>
       </main>
-      <aside className="hidden md:grid md:col-span-1 grid-rows-7 gap-4 overflow-y-auto">
-        <div className="bg-white backdrop-blur-sm rounded-3xl p-6 shadow-lg flex flex-col gap-4 row-span-3">
+      <aside className="hidden md:grid md:col-span-1 md:grid-rows-7 gap-4 overflow-y-auto">
+        <div className="bg-white backdrop-blur-sm rounded-3xl p-6 shadow-lg flex flex-col gap-4 md:row-span-3">
           {/* Profile Image */}
           <div className="flex flex-col items-center gap-4">
             <div className="w-24 h-24 rounded-full bg-gradient flex items-center justify-center overflow-hidden">
@@ -657,7 +765,7 @@ export default function Chat({ mirrorID }: { mirrorID: string }) {
         </div>
            {/* Tags */}
            {agentTags.length > 0 && (
-            <div className="flex flex-col gap-2 bg-white backdrop-blur-sm rounded-3xl p-6 shadow-lg row-span-1">
+            <div className="flex flex-col gap-2 bg-white backdrop-blur-sm rounded-3xl p-6 shadow-lg md:row-span-1">
               
               <div className="flex flex-wrap gap-2">
                 {agentTags.map((tag, index) => (
@@ -674,7 +782,7 @@ export default function Chat({ mirrorID }: { mirrorID: string }) {
 
           {/* FAQs */}
           {agentFaqs.length > 0 && (
-            <div className="flex flex-col gap-3 bg-white backdrop-blur-sm rounded-3xl p-6 shadow-lg row-span-3">
+            <div className="flex flex-col gap-3 bg-white backdrop-blur-sm rounded-3xl p-6 shadow-lg md:row-span-3">
               <h3 className="text-sm font-semibold text-muted uppercase tracking-wide">
                 Frequently Answered Questions
               </h3>

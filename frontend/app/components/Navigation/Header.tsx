@@ -9,9 +9,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { cn, truncate } from "@/lib/utils";
 import { AuthButton } from "@coinbase/cdp-react";
-import { DoorOpen, User } from "lucide-react";
+import { DoorOpen, Menu, User } from "lucide-react";
 import CopyButton from "../CopyButton";
 import { agentsApi, GetWalletResponse } from "@/lib/api";
 import { useEffect, useState } from "react";
@@ -23,6 +30,7 @@ export default function Header() {
   const { signOut } = useSignOut();
   const { currentUser } = useCurrentUser();
   const [wallet, setWallet] = useState<GetWalletResponse | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (currentUser) {
@@ -67,6 +75,81 @@ export default function Header() {
           height={40}
         />
       </Link>
+      <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+        <SheetTrigger asChild>
+          <button className="md:hidden block text-secondary">
+            <Menu className="size-6" />
+          </button>
+        </SheetTrigger>
+        <SheetContent side="left" className="w-[300px] sm:w-[400px]">
+          <SheetHeader>
+            <SheetTitle>
+              <Image
+                src="/assets/logo-dark.svg"
+                alt="Logo"
+                width={150}
+                height={150}
+              />
+            </SheetTitle>
+          </SheetHeader>
+          <nav className="mt-4">
+            <ul className="flex flex-col gap-0 text-background font-semibold text-base">
+              {wallet && (
+                <>
+                  <li className="flex items-center gap-2">
+                    <Link
+                      className={cn(
+                        "flex items-center gap-2 py-4 rounded-lg hover:bg-gray-100 w-full",
+                        isActive("/mirrors") && "text-secondary bg-gray-100"
+                      )}
+                      href="/mirrors"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <MirrorIcon className="size-5" />
+                      Mirrors
+                    </Link>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Link
+                      className={cn(
+                        "flex items-center gap-2 py-4 rounded-lg hover:bg-gray-100 w-full",
+                        isActive("/profile") && "text-secondary bg-gray-100"
+                      )}
+                      href="/profile"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <User className="size-5" />
+                      Profile
+                    </Link>
+                  </li>
+                </>
+              )}
+
+              {wallet ? (
+                <li className="mt-0">
+                  <div className="bg-secondary text-white px-4 py-3 rounded-lg font-semibold text-base flex items-center justify-between">
+                    <span>{truncate(wallet.address, 4)}</span>
+                    <CopyButton textToCopy={wallet.address || ""} />
+                  </div>
+                  <button
+                    onClick={() => {
+                      handleSignOut();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="mt-2 w-full flex items-center gap-2 py-3 px-4 rounded-lg bg-red-600 text-white hover:bg-red-700"
+                  >
+                    <DoorOpen className="size-5" /> Sign Out
+                  </button>
+                </li>
+              ) : (
+                <li className="mt-0">
+                  <AuthButton className="w-full bg-secondary text-white p-0 rounded-lg font-bold text-base capitalize" />
+                </li>
+              )}
+            </ul>
+          </nav>
+        </SheetContent>
+      </Sheet>
       <nav className="md:block hidden">
         <ul className="flex items-center gap-6 text-background font-semibold text-base">
           {wallet && (
