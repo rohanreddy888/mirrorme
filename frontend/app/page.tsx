@@ -4,13 +4,14 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import mirrorAnimation from "@/public/lottie/mirror.json";
-
+import Image from "next/image";
+import { useIsMobile } from "@/hooks/use-mobile";
 const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
 
 export default function Home() {
   const lottieRef = useRef<HTMLDivElement>(null);
   const [shouldPlay, setShouldPlay] = useState(false);
-
+  const isMobile = useIsMobile();
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -45,16 +46,16 @@ export default function Home() {
           you, powered by X402 micropayments, a dynamic reputation score, and
           seamless discoverability through ERC-8004
         </p>
-        <div className="flex gap-4 items-center justify-center">
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-center mt-6">
           <Link
             href="/mirrors"
-            className="bg-white text-secondary px-6 py-4 rounded-full font-black text-xl mt-6 hover:bg-secondary hover:text-white transition-all duration-300 flex items-center justify-center"
+            className="bg-white text-secondary px-6 py-4 rounded-full font-black text-xl hover:bg-secondary hover:text-white transition-all duration-300 flex items-center justify-center"
           >
             Explore Mirrors
           </Link>
           <Link
             href="/#how-it-works"
-            className="bg-transparent text-white px-6 py-4 rounded-full font-black text-xl mt-6 hover:bg-secondary hover:text-white transition-all duration-300 flex items-center justify-center"
+            className="bg-transparent text-white px-6 py-4 rounded-full font-black text-xl hover:bg-secondary hover:text-white transition-all duration-300 flex items-center justify-center"
           >
             Read more
           </Link>
@@ -62,7 +63,7 @@ export default function Home() {
       </div>
       <div
         id="how-it-works"
-        className="min-h-[calc(100dvh-8rem)] w-full grid grid-cols-2 items-center gap-6"
+        className="min-h-[calc(100dvh-8rem)] w-full flex flex-col-reverse md:grid grid-cols-2 items-center gap-6"
       >
         <div className="flex flex-col items-start justify-start gap-6 text-left">
           <h1 className="md:text-6xl text-5xl font-bold text-left capitalize">
@@ -75,35 +76,27 @@ export default function Home() {
           </p>
         </div>
 
-        <div ref={lottieRef} className="flex items-end justify-end">
+        <div ref={lottieRef} className="flex md:items-end md:justify-end justify-center items-center">
           {shouldPlay ? (
             <Lottie
               animationData={mirrorAnimation}
               loop={true}
-              style={{ width: 400, height: 400 }}
+              style={{ width: isMobile ? 300 : 400, height: isMobile ? 300 : 400 }}
             />
           ) : (
             <MirrorIcon width={400} height={400} />
           )}
         </div>
       </div>
-      <div className="min-h-[calc(100dvh-8rem)] w-full grid grid-cols-2 items-center gap-6">
-        <div ref={lottieRef} className="flex items-start justify-start">
-          {shouldPlay ? (
-            <Lottie
-              animationData={mirrorAnimation}
-              loop={true}
-              style={{ width: 300, height: 300 }}
-            />
-          ) : (
-            <MirrorIcon width={300} height={300} />
-          )}
+      <div className="min-h-[calc(100dvh-8rem)] w-full flex flex-col md:grid grid-cols-2 items-center gap-6">
+        <div className="flex items-start justify-start">
+          <Image src="/graphics/interactions.svg" alt="MirrorMe" width={550} height={550} />
         </div>
-        <div className="flex flex-col items-end justify-end gap-6 text-right">
-          <h1 className="md:text-6xl text-5xl font-bold text-right capitalize">
+        <div className="flex flex-col md:items-end md:justify-end justify-start items-start gap-6 text-right">
+          <h1 className="md:text-6xl text-5xl font-bold md:text-right text-left capitalize">
             How does it work?
           </h1>
-          <p className="md:text-base text-sm">
+          <p className="md:text-base text-sm md:text-right text-left">
             MirrorMe works by creating a mirror of your social media presence.
             It tracks your activity and interactions, and uses that data to
             create a mirror of your social media presence.

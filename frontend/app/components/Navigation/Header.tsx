@@ -12,6 +12,7 @@ import {
 import {
   Sheet,
   SheetContent,
+  SheetFooter,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -58,7 +59,7 @@ export default function Header() {
   const isActive = (path: string) => pathname === path;
 
   return (
-    <header className="w-full fixed top-0 md:top-6 z-50 bg-white backdrop-blur-sm px-6 py-4 rounded-none md:rounded-full shadow-md max-w-7xl flex items-center justify-between">
+    <header className="w-full fixed top-0 md:top-6 z-50 bg-white backdrop-blur-sm md:px-6 px-4 py-4 rounded-none md:rounded-full shadow-md max-w-7xl flex items-center justify-between">
       <Link href={"/"}>
         <Image
           className="ml-2 hidden md:block"
@@ -81,9 +82,9 @@ export default function Header() {
             <Menu className="size-6" />
           </button>
         </SheetTrigger>
-        <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+        <SheetContent side="right" className="w-[300px] sm:w-[400px] p-0">
           <SheetHeader>
-            <SheetTitle>
+            <SheetTitle className="p-4">
               <Image
                 src="/assets/logo-dark.svg"
                 alt="Logo"
@@ -99,7 +100,7 @@ export default function Header() {
                   <li className="flex items-center gap-2">
                     <Link
                       className={cn(
-                        "flex items-center gap-2 py-4 rounded-lg hover:bg-gray-100 w-full",
+                        "flex items-center gap-2 py-4 px-4 hover:bg-gray-100 w-full",
                         isActive("/mirrors") && "text-secondary bg-gray-100"
                       )}
                       href="/mirrors"
@@ -112,7 +113,7 @@ export default function Header() {
                   <li className="flex items-center gap-2">
                     <Link
                       className={cn(
-                        "flex items-center gap-2 py-4 rounded-lg hover:bg-gray-100 w-full",
+                        "flex items-center gap-2 py-4 px-4 hover:bg-gray-100 w-full",
                         isActive("/profile") && "text-secondary bg-gray-100"
                       )}
                       href="/profile"
@@ -127,7 +128,7 @@ export default function Header() {
 
               {wallet ? (
                 <li className="mt-0">
-                  <div className="bg-secondary text-white px-4 py-3 rounded-lg font-semibold text-base flex items-center justify-between">
+                  <div className="bg-secondary text-white px-4 py-4 font-semibold text-base flex items-center justify-between">
                     <span>{truncate(wallet.address, 4)}</span>
                     <CopyButton textToCopy={wallet.address || ""} />
                   </div>
@@ -136,7 +137,7 @@ export default function Header() {
                       handleSignOut();
                       setMobileMenuOpen(false);
                     }}
-                    className="mt-2 w-full flex items-center gap-2 py-3 px-4 rounded-lg bg-red-600 text-white hover:bg-red-700"
+                    className="w-full flex items-center gap-2 py-4 px-4 bg-red-600 text-white hover:bg-red-700"
                   >
                     <DoorOpen className="size-5" /> Sign Out
                   </button>
@@ -149,6 +150,7 @@ export default function Header() {
             </ul>
           </nav>
         </SheetContent>
+        
       </Sheet>
       <nav className="md:block hidden">
         <ul className="flex items-center gap-6 text-background font-semibold text-base">

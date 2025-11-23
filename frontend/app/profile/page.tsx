@@ -366,7 +366,7 @@ export default function ProfilePage() {
         {/* Header */}
         <div className="flex flex-row items-start justify-between gap-2 w-full mb-8">
           <h1 className="text-4xl font-bold">Profile</h1>
-          <div className="flex items-center gap-2">
+          <div className="flex md:flex-row flex-col items-end md:items-center gap-2">
             
             <Toggle
               aria-label="Toggle MirrorMe"
