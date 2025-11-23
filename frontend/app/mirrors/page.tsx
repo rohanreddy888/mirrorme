@@ -66,7 +66,7 @@ export default function MirrorsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>("all");
-  const [chainFilter, setChainFilter] = useState<ChainFilter>("all");
+  const [chainFilter, setChainFilter] = useState<ChainFilter>("base");
 
   useEffect(() => {
     const fetchMirrors = async () => {
