@@ -33,7 +33,7 @@ export default function RootLayout({
         className={`${montserrat.variable} ${poppins.variable} antialiased bg-gradient`}
       >
         <CDPProvider>
-          <div className="md:p-6 p-4 h-dvh flex flex-col items-start justify-start relative z-10">
+          <div className="md:p-6 p-4 h-dvh flex flex-col items-start justify-start relative z-0">
             <div className="w-full mx-auto flex flex-col items-center justify-center z-10 h-full md:pt-32 pt-16">
               <Header />
               {children}
